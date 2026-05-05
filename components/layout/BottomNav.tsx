@@ -15,8 +15,8 @@ const navItems = [
     ),
   },
   {
-    href: "/lineup",
-    label: "Lineup",
+    href: "/planning",
+    label: "Planning",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
         <path d="M9 18V5l12-2v13" stroke="currentColor" />
