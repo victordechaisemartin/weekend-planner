@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import PageHeader from "@/components/ui/PageHeader";
 import PastelButton from "@/components/ui/PastelButton";
 import FlowerDivider from "@/components/ui/FlowerDivider";
 import TentCard, { type TentData, type Guest } from "./TentCard";
@@ -153,13 +154,7 @@ export default function TentsClient() {
 
   return (
     <>
-      {/* Custom header */}
-      <header className="px-5 pt-8 pb-4 text-center">
-        <p className="text-2xl leading-none mb-2 select-none" aria-hidden>🌸</p>
-        <h1 className="text-xl font-bold text-charcoal leading-snug">
-          ⛺ Where are you sleeping, flower? 🌼
-        </h1>
-      </header>
+      <PageHeader title="⛺ Where are you sleeping, flower? 🌼" />
 
       <div className="px-4 pb-10 space-y-4">
         {/* Stats badges */}

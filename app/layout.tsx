@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import BottomNav from "@/components/layout/BottomNav";
-import TopBanner from "@/components/layout/TopBanner";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -25,9 +24,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} antialiased bg-cream text-charcoal`}
       >
-        <TopBanner />
-
-        <main className="max-w-lg mx-auto min-h-screen pt-11 pb-16">{children}</main>
+        <main className="max-w-lg mx-auto min-h-screen pb-16">{children}</main>
         <BottomNav />
       </body>
     </html>

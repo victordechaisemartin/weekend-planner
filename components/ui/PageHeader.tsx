@@ -9,8 +9,9 @@ type Props = {
 export default function PageHeader({ title, subtitle, className }: Props) {
   return (
     <header className={cn("px-5 pt-8 pb-4", className)}>
-      <p className="text-center text-2xl leading-none mb-2 select-none" aria-hidden>
-        🌸
+      <p className="flex items-center justify-center gap-1.5 mb-3 select-none">
+        <span className="text-base leading-none">🌸</span>
+        <span className="text-xs font-bold text-charcoal/50 tracking-wide">Lolapabouillet</span>
       </p>
       <h1 className="text-center text-2xl font-bold tracking-tight text-charcoal">
         {title}
