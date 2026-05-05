@@ -49,12 +49,15 @@ export default function WristbandCard({ userId }: { userId: string }) {
           : Promise.resolve({ data: null }),
       ]);
 
+      type CarRow = { address: string; departure_datetime: string; driver: { name: string } | null };
+      const carRow = car as CarRow | null;
+
       setInfo({
-        car: car
+        car: carRow
           ? {
-              address: (car as any).address,
-              departure_datetime: (car as any).departure_datetime,
-              driver_name: (car as any).driver?.name ?? "Unknown",
+              address: carRow.address,
+              departure_datetime: carRow.departure_datetime,
+              driver_name: carRow.driver?.name ?? "Unknown",
             }
           : null,
         tent: tent as { name: string; type: string } | null,

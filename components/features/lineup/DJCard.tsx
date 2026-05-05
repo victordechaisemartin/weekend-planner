@@ -1,5 +1,4 @@
 import type { DJ } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 type Props = { dj: DJ };
 
@@ -53,7 +52,7 @@ function RevealedCard({ dj }: { dj: DJ }) {
       {/* Hype / bio */}
       {dj.bio && (
         <p className="text-xs italic text-charcoal/60 leading-relaxed line-clamp-2 z-10">
-          "{dj.bio}"
+          &ldquo;{dj.bio}&rdquo;
         </p>
       )}
 
