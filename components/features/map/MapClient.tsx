@@ -227,7 +227,7 @@ export default function MapClient() {
         {/* Destination flower marker */}
         <Marker position={DESTINATION} icon={flowerIcon} zIndexOffset={1000}>
           <Tooltip permanent direction="top" offset={[0, -32]}>
-            🌸 Festival
+            🌸 Lolapabouillet 🌸
           </Tooltip>
           <Popup>
             <div style={{ padding: "14px 18px", minWidth: 190 }}>

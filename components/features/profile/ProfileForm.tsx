@@ -32,6 +32,17 @@ function serializeDietary(selected: string[]): string | null {
   return selected.length ? selected.join(",") : null;
 }
 
+const WINE_LEVELS = ["none", "low", "medium", "heavy"] as const;
+
+function wineToNum(text: string | null): number {
+  const idx = WINE_LEVELS.indexOf((text ?? "none") as typeof WINE_LEVELS[number]);
+  return idx >= 0 ? idx : 0;
+}
+
+function wineToText(n: number): string {
+  return WINE_LEVELS[n] ?? "none";
+}
+
 // ── DrinkBar ─────────────────────────────────────────────────
 
 function DrinkBar({
@@ -76,6 +87,7 @@ export default function ProfileForm() {
   const [phone, setPhone]             = useState("");
   const [dietary, setDietary]         = useState<string[]>([]);
   const [beerLevel, setBeerLevel]     = useState(0);
+  const [wineLevel, setWineLevel]     = useState(0);
   const [spiritsLevel, setSpiritLevel]= useState(0);
 
   const [isReturning, setIsReturning] = useState(false);
@@ -102,6 +114,7 @@ export default function ProfileForm() {
           setPhone(data.phone ?? "");
           setDietary(parseDietary(data.dietary));
           setBeerLevel(data.beer_level ?? 0);
+          setWineLevel(wineToNum(data.wine_level));
           setSpiritLevel(data.spirits_level ?? 0);
         }
       }
@@ -156,6 +169,7 @@ export default function ProfileForm() {
       phone: phone.trim() || null,
       dietary: serializeDietary(dietary),
       beer_level: beerLevel,
+      wine_level: wineToText(wineLevel),
       spirits_level: spiritsLevel,
       snoring_warning: false,
     });
@@ -177,7 +191,7 @@ export default function ProfileForm() {
     <div className="space-y-4">
 
       {/* ── 1. Event card ── */}
-      <div className="bg-[#7B2D00] px-6 pt-10 pb-8 text-white">
+      <div className="bg-purple-800 px-6 pt-10 pb-8 text-white">
         <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-white/55 mb-3">
           You&apos;re invited to
         </p>
@@ -185,7 +199,7 @@ export default function ProfileForm() {
           Lolapabouillet 🌸
         </h1>
         <div className="space-y-1.5 text-sm font-medium text-white/75">
-          <p>📅 Sat, 30 May 2026 at 11:00</p>
+          <p>📅 Fri, 22 May 2026 at 19:00</p>
           <p>📍 Villeneuve-en-Perseigne</p>
         </div>
       </div>
@@ -287,6 +301,13 @@ export default function ProfileForm() {
               label="Drinking 🍺 Beer"
               value={beerLevel}
               onChange={setBeerLevel}
+            />
+
+            {/* Wine */}
+            <DrinkBar
+              label="Drinking 🍷 Wine"
+              value={wineLevel}
+              onChange={setWineLevel}
             />
 
             {/* Hard liquor */}

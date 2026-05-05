@@ -11,6 +11,7 @@ export type User = {
   phone: string | null;
   dietary: string | null;
   beer_level: number | null;
+  wine_level: string | null;
   spirits_level: number | null;
   snoring_warning: boolean;
 };

@@ -40,7 +40,7 @@ function GarlandHeader() {
           🎧 Lineup 🌸
         </p>
         <p className="text-xs font-semibold text-charcoal/35 uppercase tracking-[0.2em] pt-1">
-          30 May 2026 · Orphin
+          22 May 2026 · Orphin
         </p>
       </div>
 
