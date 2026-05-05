@@ -19,9 +19,10 @@ create table if not exists events (
   location   text not null
 );
 
--- Extends Supabase auth.users; one row per authenticated user.
+-- Auth-free: id is a client-generated UUID stored in localStorage.
+-- No FK to auth.users — the join form works without Supabase Auth.
 create table if not exists users (
-  id               uuid primary key references auth.users(id) on delete cascade,
+  id               uuid primary key default uuid_generate_v4(),
   name             text not null,
   phone            text,
   dietary          text,
@@ -29,6 +30,9 @@ create table if not exists users (
   spirits_level    smallint check (spirits_level between 0 and 5),
   snoring_warning  boolean not null default false
 );
+
+-- Migration: if the table already exists with the auth FK, run:
+-- alter table users drop constraint users_id_fkey;
 
 create table if not exists cars (
   id                  uuid primary key default uuid_generate_v4(),
@@ -101,27 +105,22 @@ create policy "events: authenticated read"
   to authenticated
   using (true);
 
--- users: anyone authenticated can read; only owner can write
-create policy "users: authenticated read"
+-- users: fully public — auth-free join form, private festival
+create policy "users: public read"
   on users for select
-  to authenticated
+  to anon, authenticated
   using (true);
 
-create policy "users: owner insert"
+create policy "users: public insert"
   on users for insert
-  to authenticated
-  with check (id = auth.uid());
+  to anon, authenticated
+  with check (true);
 
-create policy "users: owner update"
+create policy "users: public update"
   on users for update
-  to authenticated
-  using (id = auth.uid())
-  with check (id = auth.uid());
-
-create policy "users: owner delete"
-  on users for delete
-  to authenticated
-  using (id = auth.uid());
+  to anon, authenticated
+  using (true)
+  with check (true);
 
 -- cars: anyone authenticated can read; only driver can write
 create policy "cars: authenticated read"
