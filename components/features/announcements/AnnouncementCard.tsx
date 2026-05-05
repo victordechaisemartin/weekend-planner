@@ -58,9 +58,23 @@ export default function AnnouncementCard({ announcement, variant }: Props) {
         </span>
       )}
 
-      <p className="text-sm font-medium text-charcoal leading-relaxed">
-        {announcement.message}
-      </p>
+      <div className="space-y-2">
+        {announcement.message
+          .split("\n")
+          .filter((line) => line.trim() !== "")
+          .map((line, i) => (
+            <p
+              key={i}
+              className={`text-sm leading-relaxed ${
+                i === 0
+                  ? "font-medium text-charcoal"
+                  : "font-normal text-charcoal/90"
+              }`}
+            >
+              {line}
+            </p>
+          ))}
+      </div>
 
       <p className="text-[11px] text-charcoal/40 font-medium">
         {formatDate(announcement.created_at)}
