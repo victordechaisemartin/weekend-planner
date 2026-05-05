@@ -10,6 +10,7 @@ function getTimeLeft(target: Date): Slot[] {
     { value: Math.floor(diff / 86_400_000),                       label: "days" },
     { value: Math.floor((diff % 86_400_000) / 3_600_000),         label: "hrs"  },
     { value: Math.floor((diff % 3_600_000)  / 60_000),            label: "min"  },
+    { value: Math.floor((diff % 60_000)     / 1_000),             label: "sec"  },
   ];
 }
 
@@ -19,7 +20,7 @@ export default function CountdownBanner() {
   const [slots, setSlots] = useState<Slot[]>(() => getTimeLeft(TARGET));
 
   useEffect(() => {
-    const id = setInterval(() => setSlots(getTimeLeft(TARGET)), 30_000);
+    const id = setInterval(() => setSlots(getTimeLeft(TARGET)), 1_000);
     return () => clearInterval(id);
   }, []);
 

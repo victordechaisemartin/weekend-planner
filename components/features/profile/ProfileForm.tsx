@@ -4,14 +4,13 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import PastelButton from "@/components/ui/PastelButton";
-import PastelCard from "@/components/ui/PastelCard";
-import FlowerDivider from "@/components/ui/FlowerDivider";
-import WristbandCard from "./WristbandCard";
 
-// ── constants ────────────────────────────────────────────────
+// ── constants ─────────────────────────────────────────────────
+
+const LS_KEY = "lolapabouillet_user_id";
 
 const DIETARY_OPTIONS = [
-  { key: "vegetarian", label: "🥦 Vegetarian"         },
+  { key: "vegetarian", label: "🥬 Vegetarian"         },
   { key: "no-pork",    label: "🐷 No pork"            },
   { key: "lactose",    label: "🥛 Lactose intolerant" },
 ];
@@ -23,11 +22,7 @@ const DRINK_LEVELS = [
   { value: 3, label: "Heavy"  },
 ];
 
-// ── helpers ──────────────────────────────────────────────────
-
-function initials(name: string) {
-  return name.trim().split(/\s+/).map((w) => w[0] ?? "").join("").toUpperCase().slice(0, 2) || "?";
-}
+// ── helpers ───────────────────────────────────────────────────
 
 function parseDietary(raw: string | null): string[] {
   return raw?.split(",").filter(Boolean) ?? [];
@@ -49,68 +44,96 @@ function DrinkBar({
   onChange: (v: number) => void;
 }) {
   return (
-    <PastelCard>
-      <p className="text-[11px] font-bold uppercase tracking-widest text-charcoal/40 mb-3">
+    <div>
+      <label className="block text-[10px] font-extrabold uppercase tracking-[0.15em] text-charcoal/50 mb-2">
         {label}
-      </p>
-      <div className="flex rounded-2xl overflow-hidden border border-white/80 shadow-sm">
-        {DRINK_LEVELS.map(({ value: v, label: l }, i) => (
+      </label>
+      <div className="flex rounded-2xl bg-gray-100 p-0.5 gap-0.5">
+        {DRINK_LEVELS.map(({ value: v, label: l }) => (
           <button
             key={v}
+            type="button"
             onClick={() => onChange(v)}
             className={cn(
-              "flex-1 py-2.5 text-xs font-semibold transition-all duration-150",
-              i > 0 && "border-l border-white/60",
+              "flex-1 py-2 text-xs font-semibold rounded-xl transition-all duration-150",
               value === v
-                ? "bg-lavender text-charcoal shadow-inner"
-                : "bg-white/50 text-charcoal/45 hover:bg-white/80"
+                ? "bg-lavender text-charcoal shadow-sm"
+                : "text-charcoal/40 hover:text-charcoal/65"
             )}
           >
             {l}
           </button>
         ))}
       </div>
-    </PastelCard>
+    </div>
   );
 }
 
 // ── ProfileForm ───────────────────────────────────────────────
 
 export default function ProfileForm() {
-  const [userId, setUserId] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [dietary, setDietary] = useState<string[]>([]);
-  const [beerLevel, setBeerLevel] = useState(0);
-  const [spiritsLevel, setSpiritLevel] = useState(0);
-  const [snoringWarning, setSnoringWarning] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [name, setName]               = useState("");
+  const [phone, setPhone]             = useState("");
+  const [dietary, setDietary]         = useState<string[]>([]);
+  const [beerLevel, setBeerLevel]     = useState(0);
+  const [spiritsLevel, setSpiritLevel]= useState(0);
+
+  const [isReturning, setIsReturning] = useState(false);
+  const [saving, setSaving]           = useState(false);
+  const [saved, setSaved]             = useState(false);
+
+  const [attendingCount, setAttendingCount] = useState<number | null>(null);
+  const [carsCount, setCarsCount]           = useState<number | null>(null);
+  const [freeSeats, setFreeSeats]           = useState<number | null>(null);
 
   useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
-      setUserId(user.id);
-
-      const { data } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (data) {
-        setName(data.name ?? "");
-        setPhone(data.phone ?? "");
-        setDietary(parseDietary(data.dietary));
-        setBeerLevel(data.beer_level ?? 0);
-        setSpiritLevel(data.spirits_level ?? 0);
-        setSnoringWarning(data.snoring_warning ?? false);
+    async function init() {
+      // ── Returning user: pre-fill from Supabase ──────────────
+      const storedId = localStorage.getItem(LS_KEY);
+      if (storedId) {
+        setIsReturning(true);
+        const { data } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", storedId)
+          .maybeSingle();
+        if (data) {
+          setName(data.name ?? "");
+          setPhone(data.phone ?? "");
+          setDietary(parseDietary(data.dietary));
+          setBeerLevel(data.beer_level ?? 0);
+          setSpiritLevel(data.spirits_level ?? 0);
+        }
       }
-      setLoading(false);
+
+      // ── Stats: attendees + cars ──────────────────────────────
+      const [{ count: userCount }, { data: event }] = await Promise.all([
+        supabase.from("users").select("*", { count: "exact", head: true }),
+        supabase.from("events").select("id").limit(1).maybeSingle(),
+      ]);
+
+      setAttendingCount(userCount ?? 0);
+
+      if (event?.id) {
+        const { data: cars } = await supabase
+          .from("cars")
+          .select("id, seats_total")
+          .eq("event_id", event.id);
+
+        const carIds = (cars ?? []).map((c) => c.id);
+        const { count: passengerCount } = carIds.length
+          ? await supabase
+              .from("car_passengers")
+              .select("*", { count: "exact", head: true })
+              .in("car_id", carIds)
+          : { count: 0 };
+
+        const totalSeats = (cars ?? []).reduce((s, c) => s + c.seats_total, 0);
+        setCarsCount((cars ?? []).length);
+        setFreeSeats(Math.max(0, totalSeats - (passengerCount ?? 0)));
+      }
     }
-    load();
+    init();
   }, []);
 
   function toggleDietary(key: string) {
@@ -119,181 +142,180 @@ export default function ProfileForm() {
     );
   }
 
-  async function handleSave() {
-    if (!userId) return;
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
     setSaving(true);
 
+    const existingId = localStorage.getItem(LS_KEY);
+    const id = existingId ?? crypto.randomUUID();
+
     await supabase.from("users").upsert({
-      id: userId,
+      id,
       name: name.trim(),
       phone: phone.trim() || null,
       dietary: serializeDietary(dietary),
       beer_level: beerLevel,
       spirits_level: spiritsLevel,
-      snoring_warning: snoringWarning,
+      snoring_warning: false,
     });
+
+    localStorage.setItem(LS_KEY, id);
+    setIsReturning(true);
+
+    // Bump attending count optimistically
+    setAttendingCount((n) => (existingId ? n : (n ?? 0) + 1));
 
     setSaving(false);
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setTimeout(() => setSaved(false), 2500);
   }
 
-  // ── loading / unauthenticated states ────────────────────────
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <span className="animate-pulse text-4xl">🌸</span>
-      </div>
-    );
-  }
-
-  if (!userId) {
-    return (
-      <div className="px-5 py-20 text-center space-y-2">
-        <p className="text-4xl">🌸</p>
-        <p className="text-sm font-medium text-charcoal/50">
-          Sign in to view your profile
-        </p>
-      </div>
-    );
-  }
-
-  // ── form ────────────────────────────────────────────────────
+  // ── render ────────────────────────────────────────────────
 
   return (
-    <div className="px-4 pb-10 space-y-4">
+    <div className="space-y-4">
 
-      {/* Avatar with flower crown */}
-      <div className="flex flex-col items-center py-2">
-        <div className="relative mt-2">
-          <span
-            className="absolute -top-5 left-1/2 -translate-x-1/2 text-3xl select-none leading-none"
-            aria-hidden
-          >
-            🌺
-          </span>
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-pink to-lavender flex items-center justify-center shadow-md">
-            <span className="text-white text-2xl font-extrabold tracking-tight">
-              {initials(name)}
-            </span>
-          </div>
+      {/* ── 1. Event card ── */}
+      <div className="bg-[#7B2D00] px-6 pt-10 pb-8 text-white">
+        <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-white/55 mb-3">
+          You&apos;re invited to
+        </p>
+        <h1 className="text-[2rem] font-black tracking-tight leading-none mb-5">
+          Lolapabouillet 🌸
+        </h1>
+        <div className="space-y-1.5 text-sm font-medium text-white/75">
+          <p>📅 Sat, 30 May 2026 at 11:00</p>
+          <p>📍 Villeneuve-en-Perseigne</p>
         </div>
       </div>
 
-      {/* Name + phone */}
-      <PastelCard>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-widest text-charcoal/40 mb-1.5">
-              Name
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              className="w-full rounded-2xl bg-white/70 border border-white/80 px-4 py-2.5 text-sm text-charcoal placeholder:text-charcoal/25 focus:outline-none focus:ring-2 focus:ring-pink/40"
-            />
-          </div>
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-widest text-charcoal/40 mb-1.5">
-              Phone
-            </label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+33 6 …"
-              className="w-full rounded-2xl bg-white/70 border border-white/80 px-4 py-2.5 text-sm text-charcoal placeholder:text-charcoal/25 focus:outline-none focus:ring-2 focus:ring-pink/40"
-            />
-          </div>
+      {/* ── 2. Stat boxes ── */}
+      <div className="px-4 flex gap-3">
+        <div className="flex-1 bg-white rounded-3xl p-4 text-center shadow-sm">
+          <p className="text-3xl font-black text-charcoal tabular-nums">
+            {attendingCount ?? "—"}
+          </p>
+          <p className="text-[10px] font-extrabold uppercase tracking-widest text-charcoal/35 mt-1">
+            Attending
+          </p>
         </div>
-      </PastelCard>
 
-      {/* Dietary */}
-      <PastelCard>
-        <p className="text-[11px] font-bold uppercase tracking-widest text-charcoal/40 mb-3">
-          🍽️ Dietary
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {DIETARY_OPTIONS.map(({ key, label }) => {
-            const active = dietary.includes(key);
-            return (
-              <button
-                key={key}
-                onClick={() => toggleDietary(key)}
-                className={cn(
-                  "rounded-full px-4 py-2 text-sm font-semibold border transition-all duration-150",
-                  active
-                    ? "bg-mint text-charcoal border-mint/50 shadow-[0_4px_12px_0_rgba(184,228,216,0.45)]"
-                    : "bg-white/70 text-charcoal/55 border-white hover:bg-white"
-                )}
-              >
-                {label}
-              </button>
-            );
-          })}
+        <div className="flex-1 bg-white rounded-3xl p-4 text-center shadow-sm">
+          <p className="text-3xl font-black text-charcoal tabular-nums">
+            {carsCount ?? "—"}
+          </p>
+          {freeSeats !== null && (
+            <p className="text-[11px] font-semibold text-charcoal/40 leading-none mt-0.5">
+              ({freeSeats} seats free)
+            </p>
+          )}
+          <p className="text-[10px] font-extrabold uppercase tracking-widest text-charcoal/35 mt-1">
+            Cars
+          </p>
         </div>
-      </PastelCard>
-
-      {/* Beer level */}
-      <DrinkBar label="🍺 Beer level" value={beerLevel} onChange={setBeerLevel} />
-
-      {/* Spirits level */}
-      <DrinkBar label="🥃 Spirits level" value={spiritsLevel} onChange={setSpiritLevel} />
-
-      {/* Snoring warning */}
-      <PastelCard>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-charcoal">😴 Snoring warning</p>
-            <p className="text-xs text-charcoal/40 mt-0.5">Warn your tent-mates ahead of time</p>
-          </div>
-          <button
-            role="switch"
-            aria-checked={snoringWarning}
-            onClick={() => setSnoringWarning((v) => !v)}
-            className={cn(
-              "relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink/50",
-              snoringWarning ? "bg-pink" : "bg-charcoal/15"
-            )}
-          >
-            <span
-              className={cn(
-                "absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200",
-                snoringWarning ? "translate-x-[26px]" : "translate-x-0.5"
-              )}
-            />
-          </button>
-        </div>
-      </PastelCard>
-
-      <FlowerDivider />
-
-      {/* Dressing reminder */}
-      <div className="rounded-3xl bg-pink/15 border border-pink/30 p-5 space-y-1.5">
-        <p className="text-sm font-bold text-charcoal">
-          🌸 Floral outfits only — flowers, petals, garden vibes
-        </p>
-        <p className="text-xs text-charcoal/50 leading-relaxed">
-          Dress code strictly enforced. Come as a garden. 🌷🌼🌻
-        </p>
       </div>
 
-      {/* Wristband */}
-      <WristbandCard userId={userId} />
+      {/* ── 3. Join form ── */}
+      <div className="px-4">
+        <div className="bg-white rounded-3xl shadow-sm p-6 space-y-5">
+          <h2 className="text-base font-extrabold text-charcoal">
+            {isReturning ? "Update your info" : "Join this event"}
+          </h2>
 
-      {/* Save */}
-      <PastelButton
-        variant="pink"
-        fullWidth
-        onClick={handleSave}
-        disabled={saving}
-        className="mt-2"
-      >
-        {saved ? "Saved ✓" : saving ? "Saving…" : "Save profile"}
-      </PastelButton>
+          <form onSubmit={handleSubmit} className="space-y-5">
+
+            {/* Name */}
+            <div>
+              <label className="block text-[10px] font-extrabold uppercase tracking-[0.15em] text-charcoal/50 mb-2">
+                Your name
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Fleur Dupont"
+                required
+                className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-sm text-charcoal placeholder:text-charcoal/25 focus:outline-none focus:ring-2 focus:ring-pink/30 focus:bg-white transition-colors"
+              />
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="block text-[10px] font-extrabold uppercase tracking-[0.15em] text-charcoal/50 mb-2">
+                Your phone number
+              </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+33 6 12 34 56 78"
+                className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-sm text-charcoal placeholder:text-charcoal/25 focus:outline-none focus:ring-2 focus:ring-pink/30 focus:bg-white transition-colors"
+              />
+            </div>
+
+            {/* Dietary */}
+            <div>
+              <label className="block text-[10px] font-extrabold uppercase tracking-[0.15em] text-charcoal/50 mb-2">
+                Dietary preferences{" "}
+                <span className="normal-case font-medium text-charcoal/30">(optional)</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {DIETARY_OPTIONS.map(({ key, label }) => {
+                  const active = dietary.includes(key);
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => toggleDietary(key)}
+                      className={cn(
+                        "rounded-full px-3.5 py-2 text-sm font-semibold transition-all duration-150 border",
+                        active
+                          ? "bg-mint text-charcoal border-mint/50 shadow-sm"
+                          : "bg-gray-100 text-charcoal/55 border-transparent hover:bg-gray-200"
+                      )}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Beer */}
+            <DrinkBar
+              label="Drinking 🍺 Beer"
+              value={beerLevel}
+              onChange={setBeerLevel}
+            />
+
+            {/* Hard liquor */}
+            <DrinkBar
+              label="Drinking 🥃 Hard liquor"
+              value={spiritsLevel}
+              onChange={setSpiritLevel}
+            />
+
+            {/* Floral reminder */}
+            <div className="rounded-2xl bg-pink/15 border border-pink/25 px-4 py-3.5">
+              <p className="text-sm font-semibold text-charcoal leading-snug">
+                🌸 Floral outfits only — flowers, petals, garden vibes
+              </p>
+            </div>
+
+            {/* Submit */}
+            <PastelButton
+              type="submit"
+              variant="pink"
+              fullWidth
+              disabled={saving || !name.trim()}
+            >
+              {saved ? "Joined! ✓" : saving ? "Saving…" : "Join Event"}
+            </PastelButton>
+
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

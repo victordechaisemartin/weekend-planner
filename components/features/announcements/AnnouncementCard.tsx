@@ -15,7 +15,7 @@ type Props = {
 const EMOJIS = ["🌸", "🎉", "❤️", "🌼"] as const;
 
 const cardStyles: Record<Variant, string> = {
-  pinned:   "bg-pink/20 border-pink/40",
+  pinned:   "bg-pink border-pink/50",
   lavender: "bg-lavender/30 border-lavender/40",
   mint:     "bg-mint/30 border-mint/40",
 };
@@ -51,14 +51,11 @@ export default function AnnouncementCard({ announcement, variant }: Props) {
   }
 
   return (
-    <article className={cn("rounded-3xl border p-5 space-y-3", cardStyles[variant])}>
+    <article className={cn("relative rounded-3xl border p-5 space-y-3", cardStyles[variant])}>
       {variant === "pinned" && (
-        <div className="flex items-center gap-1.5">
-          <span className="text-base leading-none">📌</span>
-          <span className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-pink/80">
-            Pinned
-          </span>
-        </div>
+        <span className="absolute top-4 right-4 text-lg leading-none select-none" aria-label="Pinned">
+          📌
+        </span>
       )}
 
       <p className="text-sm font-medium text-charcoal leading-relaxed">
