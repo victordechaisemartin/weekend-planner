@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Lilita_One } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/layout/BottomNav";
 
@@ -7,6 +8,12 @@ const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
   weight: "100 900",
+});
+
+const lilitaOne = Lilita_One({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-lilita",
 });
 
 export const metadata: Metadata = {
@@ -20,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={lilitaOne.variable}>
       <body
         className={`${geistSans.variable} antialiased bg-cream text-charcoal`}
       >

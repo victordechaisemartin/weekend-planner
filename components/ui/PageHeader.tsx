@@ -11,7 +11,10 @@ export default function PageHeader({ title, subtitle, className }: Props) {
     <header className={cn("px-5 pt-8 pb-4", className)}>
       <p className="flex items-center justify-center gap-2 mb-3 select-none">
         <span className="text-2xl leading-none">🌸</span>
-        <span className="inline-block italic -skew-x-3 text-3xl font-black tracking-tighter text-charcoal leading-none">
+        <span
+          className="inline-block uppercase text-4xl leading-none font-[family-name:var(--font-lilita)] text-charcoal"
+          style={{ WebkitTextStroke: "1.5px #2D2D2D" }}
+        >
           Lolapabouillet
         </span>
       </p>

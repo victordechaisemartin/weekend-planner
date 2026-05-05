@@ -144,7 +144,7 @@ export default function AddTentModal({ onClose, onSubmit }: Props) {
             >
               <span
                 className={cn(
-                  "absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200",
+                  "pointer-events-none absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200",
                   snoring ? "translate-x-[26px]" : "translate-x-0.5"
                 )}
               />

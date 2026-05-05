@@ -14,7 +14,7 @@ function getTimeLeft(target: Date): Slot[] {
   ];
 }
 
-const TARGET = new Date("2026-05-30T11:00:00");
+const TARGET = new Date("2026-05-22T19:00:00");
 
 export default function CountdownBanner() {
   const [slots, setSlots] = useState<Slot[]>(() => getTimeLeft(TARGET));
@@ -51,7 +51,7 @@ export default function CountdownBanner() {
       </div>
 
       <p className="mt-3 text-[11px] text-charcoal/35 font-medium">
-        30 May 2026 · 11:00 🎵
+        22 May 2026 · 19:00 🎵
       </p>
     </div>
   );

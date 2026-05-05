@@ -5,16 +5,24 @@ import FlowerDivider from "@/components/ui/FlowerDivider";
 import CountdownBanner from "@/components/features/announcements/CountdownBanner";
 import AnnouncementCard from "@/components/features/announcements/AnnouncementCard";
 
-export const revalidate = 60;
+export const revalidate = 0; // no cache while debugging
 
 export default async function AnnouncementsPage() {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("announcements")
     .select("*")
-    .order("pinned",      { ascending: false })
-    .order("created_at",  { ascending: false });
+    .order("pinned",     { ascending: false })
+    .order("created_at", { ascending: false });
 
-  const announcements: Announcement[] = data ?? [];
+  // Log raw Supabase response to the server console
+  console.log("[announcements] data:", JSON.stringify(data, null, 2));
+  console.log("[announcements] error:", JSON.stringify(error, null, 2));
+
+  const announcements: Announcement[] = (data ?? []).map((a) => ({
+    ...a,
+    reactions: a.reactions ?? {},
+  }));
+
   const pinned = announcements.filter((a) => a.pinned);
   const feed   = announcements.filter((a) => !a.pinned);
 
@@ -23,6 +31,12 @@ export default async function AnnouncementsPage() {
       <PageHeader title="Announcements 📢" />
 
       <div className="px-4 pb-10 space-y-4">
+        {/* Debug line — remove once data is confirmed */}
+        <p className="text-center text-xs text-charcoal/40 font-mono">
+          Fetched {announcements.length} announcement{announcements.length !== 1 ? "s" : ""}
+          {error ? ` · error: ${error.message}` : ""}
+        </p>
+
         <CountdownBanner />
 
         {pinned.map((a) => (

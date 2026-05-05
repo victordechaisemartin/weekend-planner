@@ -214,11 +214,15 @@ create policy "tent_guests: self or host delete"
     )
   );
 
--- announcements: authenticated read; only the author (via service role
--- or an admin policy) should write – for now restricted to service role
+-- announcements: public read (anon + authenticated); writes via service role only
 create policy "announcements: authenticated read"
   on announcements for select
   to authenticated
+  using (true);
+
+create policy "announcements: anon read"
+  on announcements for select
+  to anon
   using (true);
 
 -- djs: authenticated read of revealed rows only; unrevealed visible to

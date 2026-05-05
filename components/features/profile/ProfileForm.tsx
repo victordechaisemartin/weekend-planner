@@ -191,14 +191,14 @@ export default function ProfileForm() {
     <div className="space-y-4">
 
       {/* ── 1. Event card ── */}
-      <div className="bg-purple-800 px-6 pt-10 pb-8 text-white">
-        <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-white/55 mb-3">
+      <div className="bg-violet-200 px-6 pt-10 pb-8 text-violet-900">
+        <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-violet-900/55 mb-3">
           You&apos;re invited to
         </p>
         <h1 className="text-[2rem] font-black tracking-tight leading-none mb-5">
           Lolapabouillet 🌸
         </h1>
-        <div className="space-y-1.5 text-sm font-medium text-white/75">
+        <div className="space-y-1.5 text-sm font-medium text-violet-900/75">
           <p>📅 Fri, 22 May 2026 at 19:00</p>
           <p>📍 Villeneuve-en-Perseigne</p>
         </div>
