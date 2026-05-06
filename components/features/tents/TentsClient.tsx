@@ -4,112 +4,115 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/useAuth";
+import { getEventId } from "@/lib/constants";
 import PageHeader from "@/components/ui/PageHeader";
 import PastelButton from "@/components/ui/PastelButton";
 import FlowerDivider from "@/components/ui/FlowerDivider";
 import TentCard, { type TentData, type Guest } from "./TentCard";
 import AddTentModal from "./AddTentModal";
 
+// ── types ─────────────────────────────────────────────────────
+
+type RawGuestRef = { user: { id: string; name: string; snoring_warning: boolean } | null };
+
+type RawTentRow = {
+  id: string;
+  event_id: string;
+  host_id: string;
+  name: string;
+  type: string;
+  capacity: number;
+  host: { id: string; name: string } | null;
+  tent_guests: RawGuestRef[];
+};
+
 // ── data fetching ─────────────────────────────────────────────
 
-async function loadTents(eventId: string): Promise<TentData[]> {
-  const { data: rawTents } = await supabase
+async function loadTents(): Promise<TentData[]> {
+  const eventId = await getEventId();
+  if (!eventId) return [];
+
+  const { data: raw } = await supabase
     .from("tents")
-    .select("*")
+    .select(`
+      *,
+      host:users!host_id(id, name),
+      tent_guests(user:users(id, name, snoring_warning))
+    `)
     .eq("event_id", eventId)
     .order("created_at", { ascending: true });
 
-  if (!rawTents?.length) return [];
-
-  const hostIds = Array.from(new Set(rawTents.map((t) => t.host_id)));
-  const tentIds = rawTents.map((t) => t.id);
-
-  const [{ data: hosts }, { data: tgRows }] = await Promise.all([
-    supabase.from("users").select("id, name").in("id", hostIds),
-    supabase.from("tent_guests").select("tent_id, user_id").in("tent_id", tentIds),
-  ]);
-
-  const guestIds = Array.from(new Set((tgRows ?? []).map((r) => r.user_id)));
-  const { data: guestUsers } = guestIds.length
-    ? await supabase.from("users").select("id, name, snoring_warning").in("id", guestIds)
-    : { data: [] as Guest[] };
-
-  return rawTents.map((tent) => ({
-    ...tent,
-    host:
-      (hosts ?? []).find((h) => h.id === tent.host_id) ??
-      { id: tent.host_id, name: "Unknown" },
-    guests: (tgRows ?? [])
-      .filter((tg) => tg.tent_id === tent.id)
-      .map((tg) => (guestUsers ?? []).find((u) => u.id === tg.user_id))
-      .filter((u): u is Guest => !!u),
+  return ((raw ?? []) as unknown as RawTentRow[]).map((row) => ({
+    id: row.id,
+    event_id: row.event_id,
+    host_id: row.host_id,
+    name: row.name,
+    type: row.type,
+    capacity: row.capacity,
+    host: row.host ?? { id: row.host_id, name: "Unknown" },
+    guests: (row.tent_guests ?? [])
+      .map((tg) => tg.user)
+      .filter((u): u is Guest => u !== null),
   }));
 }
 
 // ── component ─────────────────────────────────────────────────
 
 export default function TentsClient() {
+  // useAuth is only needed for user-specific UI (your tent, join/leave buttons).
+  // Data fetching starts immediately on mount — it does not wait for auth.
   const { user, profile, loading: authLoading } = useAuth();
   const currentUserId = user?.id ?? null;
 
-  const [eventId, setEventId] = useState<string | null>(null);
   const [tents, setTents] = useState<TentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  const refresh = useCallback(async (eId: string) => {
-    const data = await loadTents(eId);
+  // Fires immediately — Supabase client uses the stored token without waiting
+  // for onAuthStateChange to propagate through React state.
+  useEffect(() => {
+    loadTents().then((data) => {
+      setTents(data);
+      setLoading(false);
+    });
+  }, []);
+
+  const refresh = useCallback(async () => {
+    const data = await loadTents();
     setTents(data);
   }, []);
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) { setLoading(false); return; }
-
-    async function init() {
-      const { data: event } = await supabase
-        .from("events").select("id").limit(1).maybeSingle();
-      if (!event?.id) { setLoading(false); return; }
-      setEventId(event.id);
-      const data = await loadTents(event.id);
-      setTents(data);
-      setLoading(false);
-    }
-    init();
-  }, [authLoading, user]);
-
   async function handleJoin(tentId: string) {
-    if (!currentUserId || !eventId) return;
+    if (!currentUserId) return;
     setBusy(true);
     await supabase
       .from("tent_guests")
       .insert({ tent_id: tentId, user_id: currentUserId });
-    await refresh(eventId);
+    await refresh();
     setBusy(false);
   }
 
   async function handleLeave(tentId: string) {
-    if (!currentUserId || !eventId) return;
+    if (!currentUserId) return;
     setBusy(true);
     await supabase
       .from("tent_guests")
       .delete()
       .eq("tent_id", tentId)
       .eq("user_id", currentUserId);
-    await refresh(eventId);
+    await refresh();
     setBusy(false);
   }
 
   async function handleRemoveGuest(tentId: string, guestId: string) {
-    if (!eventId) return;
     setBusy(true);
     await supabase
       .from("tent_guests")
       .delete()
       .eq("tent_id", tentId)
       .eq("user_id", guestId);
-    await refresh(eventId);
+    await refresh();
     setBusy(false);
   }
 
@@ -119,9 +122,10 @@ export default function TentsClient() {
     capacity: number;
     snoring: boolean;
   }) {
-    if (!currentUserId || !eventId) return;
+    if (!currentUserId) return;
+    const eventId = await getEventId();
+    if (!eventId) return;
 
-    // Update snoring warning on the user's profile (silent no-op if row doesn't exist yet)
     await supabase
       .from("users")
       .update({ snoring_warning: form.snoring })
@@ -136,7 +140,7 @@ export default function TentsClient() {
     });
 
     setShowModal(false);
-    await refresh(eventId);
+    await refresh();
   }
 
   // ── derived stats ──────────────────────────────────────────
@@ -148,15 +152,17 @@ export default function TentsClient() {
 
   // ── render ─────────────────────────────────────────────────
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <span className="animate-pulse text-4xl">🌸</span>
+      <div className="space-y-3 px-4 pt-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="animate-pulse bg-lavender/30 rounded-2xl h-32" />
+        ))}
       </div>
     );
   }
 
-  if (!user) {
+  if (!authLoading && !user) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3 px-4">
         <p className="text-sm text-charcoal/60 text-center">

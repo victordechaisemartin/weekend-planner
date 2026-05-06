@@ -4,101 +4,103 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/useAuth";
+import { getEventId } from "@/lib/constants";
 import PageHeader from "@/components/ui/PageHeader";
 import PastelButton from "@/components/ui/PastelButton";
 import CarCard, { type CarData } from "./CarCard";
 import AddCarModal from "./AddCarModal";
 
+// ── types ─────────────────────────────────────────────────────
+
+type RawPassengerRef = { user: { id: string; name: string } | null };
+
+type RawCarRow = {
+  id: string;
+  event_id: string;
+  driver_id: string;
+  address: string;
+  seats_total: number;
+  departure_datetime: string;
+  driver: { id: string; name: string } | null;
+  car_passengers: RawPassengerRef[];
+};
+
 // ── data fetching ─────────────────────────────────────────────
 
-async function loadCars(eventId: string): Promise<CarData[]> {
-  const { data: rawCars } = await supabase
+async function loadCars(): Promise<CarData[]> {
+  const eventId = await getEventId();
+  if (!eventId) return [];
+
+  const { data: raw } = await supabase
     .from("cars")
-    .select("*")
+    .select(`
+      *,
+      driver:users!driver_id(id, name),
+      car_passengers(user:users(id, name))
+    `)
     .eq("event_id", eventId)
     .order("departure_datetime", { ascending: true });
 
-  if (!rawCars || rawCars.length === 0) return [];
-
-  const driverIds = Array.from(new Set(rawCars.map((c) => c.driver_id)));
-  const carIds = rawCars.map((c) => c.id);
-
-  const [{ data: drivers }, { data: cpRows }] = await Promise.all([
-    supabase.from("users").select("id, name").in("id", driverIds),
-    supabase.from("car_passengers").select("car_id, user_id").in("car_id", carIds),
-  ]);
-
-  const passengerIds = Array.from(new Set((cpRows ?? []).map((r) => r.user_id)));
-  const { data: passengerUsers } = passengerIds.length
-    ? await supabase.from("users").select("id, name").in("id", passengerIds)
-    : { data: [] as { id: string; name: string }[] };
-
-  return rawCars.map((car) => ({
-    ...car,
-    driver:
-      (drivers ?? []).find((d) => d.id === car.driver_id) ??
-      { id: car.driver_id, name: "Unknown" },
-    passengers: (cpRows ?? [])
-      .filter((cp) => cp.car_id === car.id)
-      .map((cp) => (passengerUsers ?? []).find((u) => u.id === cp.user_id))
-      .filter((u): u is { id: string; name: string } => !!u),
+  return ((raw ?? []) as unknown as RawCarRow[]).map((row) => ({
+    id: row.id,
+    event_id: row.event_id,
+    driver_id: row.driver_id,
+    address: row.address,
+    seats_total: row.seats_total,
+    departure_datetime: row.departure_datetime,
+    driver: row.driver ?? { id: row.driver_id, name: "Unknown" },
+    passengers: (row.car_passengers ?? [])
+      .map((cp) => cp.user)
+      .filter((u): u is { id: string; name: string } => u !== null),
   }));
 }
 
 // ── component ─────────────────────────────────────────────────
 
 export default function CarsClient() {
+  // useAuth is only needed for user-specific UI (your car, join/leave buttons).
+  // Data fetching starts immediately on mount — it does not wait for auth.
   const { user, profile, loading: authLoading } = useAuth();
   const currentUserId = user?.id ?? null;
 
-  const [eventId, setEventId] = useState<string | null>(null);
   const [cars, setCars] = useState<CarData[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  const refresh = useCallback(async (eId: string) => {
-    const data = await loadCars(eId);
+  // Fires immediately — Supabase client uses the stored token without waiting
+  // for onAuthStateChange to propagate through React state.
+  useEffect(() => {
+    loadCars().then((data) => {
+      setCars(data);
+      setLoading(false);
+    });
+  }, []);
+
+  const refresh = useCallback(async () => {
+    const data = await loadCars();
     setCars(data);
   }, []);
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) { setLoading(false); return; }
-
-    async function init() {
-      const { data: event } = await supabase
-        .from("events").select("id").limit(1).maybeSingle();
-
-      if (!event?.id) { setLoading(false); return; }
-      setEventId(event.id);
-
-      const data = await loadCars(event.id);
-      setCars(data);
-      setLoading(false);
-    }
-    init();
-  }, [authLoading, user]);
-
   async function handleJoin(carId: string) {
-    if (!currentUserId || !eventId) return;
+    if (!currentUserId) return;
     setBusy(true);
     await supabase
       .from("car_passengers")
       .insert({ car_id: carId, user_id: currentUserId });
-    await refresh(eventId);
+    await refresh();
     setBusy(false);
   }
 
   async function handleLeave(carId: string) {
-    if (!currentUserId || !eventId) return;
+    if (!currentUserId) return;
     setBusy(true);
     await supabase
       .from("car_passengers")
       .delete()
       .eq("car_id", carId)
       .eq("user_id", currentUserId);
-    await refresh(eventId);
+    await refresh();
     setBusy(false);
   }
 
@@ -108,7 +110,9 @@ export default function CarsClient() {
     date: string;
     time: string;
   }) {
-    if (!currentUserId || !eventId) return;
+    if (!currentUserId) return;
+    const eventId = await getEventId();
+    if (!eventId) return;
     const departure_datetime = new Date(`${form.date}T${form.time}:00`).toISOString();
     await supabase.from("cars").insert({
       event_id: eventId,
@@ -118,7 +122,7 @@ export default function CarsClient() {
       departure_datetime,
     });
     setShowModal(false);
-    await refresh(eventId);
+    await refresh();
   }
 
   // ── derived stats ──────────────────────────────────────────
@@ -130,15 +134,17 @@ export default function CarsClient() {
 
   // ── render ─────────────────────────────────────────────────
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <span className="animate-pulse text-4xl">🌸</span>
+      <div className="space-y-3 px-4 pt-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="animate-pulse bg-pink/20 rounded-2xl h-32" />
+        ))}
       </div>
     );
   }
 
-  if (!user) {
+  if (!authLoading && !user) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3 px-4">
         <p className="text-sm text-charcoal/60 text-center">

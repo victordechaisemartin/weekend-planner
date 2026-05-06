@@ -23,7 +23,6 @@ export type AuthState = {
   isAdmin: boolean;
 };
 
-// Pages that do not require a session
 const PUBLIC_PATHS = ["/auth"];
 
 async function fetchProfile(userId: string): Promise<UserProfile | null> {
@@ -36,15 +35,31 @@ async function fetchProfile(userId: string): Promise<UserProfile | null> {
   return { ...data, is_admin: data.is_admin ?? false };
 }
 
-// Retries up to 4 times (600 ms apart) to handle the race where onAuthStateChange
-// fires before the users-row upsert in handleSignup has completed.
+// Module-level deduplication: multiple useAuth() instances (e.g. page + child component)
+// share one in-flight request. Cache is keyed by userId so switching accounts works.
+// Cleared on SIGNED_OUT so the next sign-in fetches a fresh profile.
+let profileCache: { userId: string; profile: UserProfile } | null = null;
+let profilePromise: Promise<UserProfile | null> | null = null;
+
 async function fetchProfileWithRetry(userId: string): Promise<UserProfile | null> {
-  for (let attempt = 0; attempt < 4; attempt++) {
-    const profile = await fetchProfile(userId);
-    if (profile) return profile;
-    if (attempt < 3) await new Promise((r) => setTimeout(r, 600));
-  }
-  return null;
+  if (profileCache?.userId === userId) return profileCache.profile;
+  if (profilePromise) return profilePromise;
+
+  profilePromise = (async () => {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const p = await fetchProfile(userId);
+      if (p) {
+        profileCache = { userId, profile: p };
+        profilePromise = null;
+        return p;
+      }
+      if (attempt < 3) await new Promise((r) => setTimeout(r, 600));
+    }
+    profilePromise = null;
+    return null;
+  })();
+
+  return profilePromise;
 }
 
 export function useAuth(): AuthState {
@@ -57,23 +72,26 @@ export function useAuth(): AuthState {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Hydrate from the persisted session on mount
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) setProfile(await fetchProfileWithRetry(session.user.id));
-      setLoading(false);
-    });
-
-    // Stay in sync with sign-in / sign-out / token refresh events
+    // onAuthStateChange fires immediately with INITIAL_SESSION on mount,
+    // providing the current session without a separate getSession() call.
+    // Removing getSession() eliminates the double-fire that caused two
+    // concurrent fetchProfileWithRetry calls on every mount.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          setProfile(await fetchProfileWithRetry(session.user.id));
-        } else {
+      async (event, session) => {
+        if (event === "SIGNED_OUT") {
+          profileCache = null;
+          profilePromise = null;
           setProfile(null);
+          setUser(null);
+          setSession(null);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+          if (session?.user) {
+            setProfile(await fetchProfileWithRetry(session.user.id));
+          } else {
+            setProfile(null);
+          }
         }
         setLoading(false);
       }
@@ -82,7 +100,6 @@ export function useAuth(): AuthState {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Redirect unauthenticated users away from protected pages
   useEffect(() => {
     if (!loading && !user && !PUBLIC_PATHS.includes(pathname)) {
       router.replace("/auth");

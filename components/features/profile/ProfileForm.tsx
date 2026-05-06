@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/lib/useAuth";
+import type { UserProfile } from "@/lib/useAuth";
+import { getEventId } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import PastelButton from "@/components/ui/PastelButton";
 
@@ -84,21 +86,21 @@ const inputCls =
 const labelCls =
   "block text-[10px] font-extrabold uppercase tracking-[0.15em] text-charcoal/50 mb-2";
 
-export default function ProfileForm() {
-  const { user, profile, loading: authLoading } = useAuth();
+type Props = {
+  user: User | null;
+  profile: UserProfile | null;
+};
 
-  // Form fields (name is read-only from profile — not editable)
+export default function ProfileForm({ user, profile }: Props) {
   const [phone, setPhone]             = useState("");
   const [dietary, setDietary]         = useState<string[]>([]);
   const [beerLevel, setBeerLevel]     = useState(0);
   const [wineLevel, setWineLevel]     = useState(0);
   const [spiritsLevel, setSpiritLevel]= useState(0);
 
-  // Save state
   const [saving, setSaving] = useState(false);
   const [saved, setSaved]   = useState(false);
 
-  // Stats
   const [attendingCount, setAttendingCount] = useState<number | null>(null);
   const [carsCount, setCarsCount]           = useState<number | null>(null);
   const [freeSeats, setFreeSeats]           = useState<number | null>(null);
@@ -114,18 +116,18 @@ export default function ProfileForm() {
     }
   }, [profile]);
 
-  // Fetch stats
+  // Fetch stats — fires on mount, uses shared getEventId() cache
   useEffect(() => {
     async function fetchStats() {
-      const [{ count: userCount }, { data: event }] = await Promise.all([
+      const [{ count: userCount }, eventId] = await Promise.all([
         supabase.from("users").select("*", { count: "exact", head: true }),
-        supabase.from("events").select("id").limit(1).maybeSingle(),
+        getEventId(),
       ]);
       setAttendingCount(userCount ?? 0);
 
-      if (event?.id) {
+      if (eventId) {
         const { data: cars } = await supabase
-          .from("cars").select("id, seats_total").eq("event_id", event.id);
+          .from("cars").select("id, seats_total").eq("event_id", eventId);
         const carIds = (cars ?? []).map((c) => c.id);
         const { count: passengerCount } = carIds.length
           ? await supabase
@@ -173,17 +175,6 @@ export default function ProfileForm() {
   }
 
   // ── Render ────────────────────────────────────────────────────
-
-  // Spinner only while auth itself is resolving or user is absent.
-  // If user exists but profile is still null (e.g. fresh signup race), show
-  // the form with empty fields so the page doesn't hang indefinitely.
-  if (authLoading || !user) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <span className="animate-pulse text-4xl">🌸</span>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">

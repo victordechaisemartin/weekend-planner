@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/useAuth";
 import ProfileForm from "@/components/features/profile/ProfileForm";
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-cream pb-10">
-      <ProfileForm />
+      <ProfileForm user={user} profile={profile} />
     </div>
   );
 }
