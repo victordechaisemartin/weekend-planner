@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/useAuth";
 import PageHeader from "@/components/ui/PageHeader";
@@ -63,7 +64,8 @@ export default function TentsClient() {
   }, []);
 
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading) return;
+    if (!user) { setLoading(false); return; }
 
     async function init() {
       const { data: event } = await supabase
@@ -146,10 +148,23 @@ export default function TentsClient() {
 
   // ── render ─────────────────────────────────────────────────
 
-  if (authLoading || !profile || loading) {
+  if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center py-24">
         <span className="animate-pulse text-4xl">🌸</span>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3 px-4">
+        <p className="text-sm text-charcoal/60 text-center">
+          Connecte-toi pour ajouter ta tente 🌸
+        </p>
+        <Link href="/auth" className="text-sm font-semibold text-pink hover:underline">
+          Se connecter
+        </Link>
       </div>
     );
   }
@@ -207,7 +222,7 @@ export default function TentsClient() {
 
       {showModal && (
         <AddTentModal
-          hostName={profile.name}
+          hostName={profile?.name ?? ""}
           onClose={() => setShowModal(false)}
           onSubmit={handleAddTent}
         />

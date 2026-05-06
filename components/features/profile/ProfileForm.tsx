@@ -174,8 +174,10 @@ export default function ProfileForm() {
 
   // ── Render ────────────────────────────────────────────────────
 
-  // Show spinner while auth loads, redirecting, or profile not yet fetched
-  if (authLoading || !user || !profile) {
+  // Spinner only while auth itself is resolving or user is absent.
+  // If user exists but profile is still null (e.g. fresh signup race), show
+  // the form with empty fields so the page doesn't hang indefinitely.
+  if (authLoading || !user) {
     return (
       <div className="flex items-center justify-center py-24">
         <span className="animate-pulse text-4xl">🌸</span>
@@ -236,7 +238,7 @@ export default function ProfileForm() {
           <p
             className="font-[family-name:var(--font-lilita)] text-2xl text-charcoal leading-snug"
           >
-            Bonjour, {profile.name} 🌸
+            {profile ? `Bonjour, ${profile.name} 🌸` : "Bonjour 🌸"}
           </p>
 
           <form onSubmit={handleSave} className="space-y-5">

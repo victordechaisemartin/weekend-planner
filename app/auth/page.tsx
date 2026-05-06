@@ -8,16 +8,16 @@ import { cn } from "@/lib/utils";
 // ── constants ─────────────────────────────────────────────────
 
 const DIETARY_OPTIONS = [
-  { key: "vegetarian", label: "🥬 Vegetarian"         },
-  { key: "no-pork",    label: "🐷 No pork"            },
-  { key: "lactose",    label: "🥛 Lactose intolerant" },
+  { key: "vegetarian", label: "🥬 Végétarien·ne"       },
+  { key: "no-pork",    label: "🐷 Sans porc"           },
+  { key: "lactose",    label: "🥛 Intolérant·e lactose" },
 ];
 
 const DRINK_LEVELS = [
-  { value: 0, label: "None"   },
-  { value: 1, label: "Low"    },
-  { value: 2, label: "Medium" },
-  { value: 3, label: "Heavy"  },
+  { value: 0, label: "Rien"   },
+  { value: 1, label: "Peu"    },
+  { value: 2, label: "Moyen"  },
+  { value: 3, label: "Beauf"  },
 ];
 
 const WINE_LEVELS = ["none", "low", "medium", "heavy"] as const;
@@ -78,14 +78,20 @@ const submitCls =
   "shadow-[0_4px_14px_0_rgba(244,167,185,0.45)] hover:brightness-105 active:brightness-95 " +
   "transition-all disabled:opacity-40 disabled:cursor-not-allowed";
 
+const linkCls = "font-semibold text-pink hover:underline";
+
 // ── page ──────────────────────────────────────────────────────
 
-type Mode = "signup" | "signin";
+type Mode = "signin" | "signup" | "reset";
+
+const TITLES: Record<Mode, string> = {
+  signin: "Bon retour 🌸",
+  signup: "Rejoins Lolapabouillet 🌸",
+  reset:  "Réinitialiser mon mot de passe 🌸",
+};
 
 export default function AuthPage() {
   const router = useRouter();
-
-  // If a valid session already exists, skip the form entirely
   const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
@@ -95,15 +101,18 @@ export default function AuthPage() {
     });
   }, [router]);
 
-  const [mode, setMode] = useState<Mode>("signup");
+  // ── state ──────────────────────────────────────────────────
 
-  // Shared fields
-  const [username, setUsername] = useState("");
+  const [mode, setMode] = useState<Mode>("signin");
+
+  // shared across all modes
+  const [email,    setEmail]   = useState("");
   const [password, setPassword] = useState("");
-  const [error,    setError]    = useState("");
-  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]   = useState("");
+  const [success,  setSuccess] = useState("");
+  const [loading,  setLoading] = useState(false);
 
-  // Signup-only fields
+  // signup-only
   const [name,         setName]        = useState("");
   const [dietary,      setDietary]     = useState<string[]>([]);
   const [beerLevel,    setBeerLevel]   = useState(0);
@@ -113,12 +122,34 @@ export default function AuthPage() {
   function switchMode(m: Mode) {
     setMode(m);
     setError("");
+    setSuccess("");
   }
 
   function toggleDietary(key: string) {
     setDietary((prev) =>
       prev.includes(key) ? prev.filter((d) => d !== key) : [...prev, key]
     );
+  }
+
+  // ── sign in ────────────────────────────────────────────────
+
+  async function handleSignin(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    const { error: authErr } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
+
+    if (authErr) {
+      setError("Email ou mot de passe incorrect.");
+      setLoading(false);
+      return;
+    }
+
+    router.push("/announcements");
   }
 
   // ── sign up ────────────────────────────────────────────────
@@ -128,21 +159,24 @@ export default function AuthPage() {
     setError("");
 
     if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
-    if (!/^[a-z0-9_]+$/.test(username.trim())) {
-      setError("Username: lowercase letters, numbers and underscores only.");
+      setError("Le mot de passe doit contenir au moins 8 caractères.");
       return;
     }
 
     setLoading(true);
-    const email = `${username.trim()}@lolapabouillet.fr`;
 
-    const { data, error: authErr } = await supabase.auth.signUp({ email, password });
+    const { data, error: authErr } = await supabase.auth.signUp({
+      email: email.trim().toLowerCase(),
+      password,
+    });
 
     if (authErr) {
-      setError(authErr.message);
+      const msg = authErr.message.toLowerCase();
+      if (msg.includes("already registered") || msg.includes("already exists")) {
+        setError("Cet email est déjà utilisé 🌸 Connecte-toi plutôt !");
+      } else {
+        setError(authErr.message);
+      }
       setLoading(false);
       return;
     }
@@ -160,28 +194,29 @@ export default function AuthPage() {
       });
     }
 
-    // Requires "Enable email confirmations" = OFF in Supabase dashboard
-    // Authentication → Settings → Enable email confirmations → OFF
-    router.push("/announcements");
+    router.push("/profile");
   }
 
-  // ── sign in ────────────────────────────────────────────────
+  // ── forgot password ─────────────────────────────────────────
 
-  async function handleSignin(e: React.FormEvent) {
+  async function handleReset(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    const email = `${username.trim().toLowerCase()}@lolapabouillet.fr`;
-    const { error: authErr } = await supabase.auth.signInWithPassword({ email, password });
+    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(
+      email.trim().toLowerCase(),
+      { redirectTo: "https://lolapabouillet.vercel.app/auth/reset" }
+    );
 
-    if (authErr) {
-      setError("Wrong username or password.");
-      setLoading(false);
+    setLoading(false);
+
+    if (resetErr) {
+      setError(resetErr.message);
       return;
     }
 
-    router.push("/announcements");
+    setSuccess("Vérifie ta boîte mail 🌸");
   }
 
   // ── render ─────────────────────────────────────────────────
@@ -196,45 +231,112 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-cream pb-20">
-      {/* Festival header */}
-      <div className="px-6 pt-10 pb-4 space-y-1.5">
+      {/* Festival wordmark */}
+      <div className="px-6 pt-10 pb-4">
         <h1
           className="font-[family-name:var(--font-lilita)] text-4xl uppercase leading-none"
           style={{ WebkitTextStroke: "2px #2D2D2D", color: "white" }}
         >
           Lolapabouillet 🌸
         </h1>
-        <p className="text-xs font-semibold text-charcoal/35 uppercase tracking-[0.2em]">
-          {mode === "signup" ? "Join the festival · 22 May 2026" : "Welcome back 🌸"}
+        <p className="text-xs font-semibold text-charcoal/35 uppercase tracking-[0.2em] mt-1.5">
+          22 Mai 2026 · Rambouillet
         </p>
       </div>
 
       <div className="px-4">
         <div className="bg-white rounded-3xl shadow-sm p-6 space-y-5">
 
-          {/* ── SIGNUP ── */}
-          {mode === "signup" && (
-            <form onSubmit={handleSignup} className="space-y-5">
+          {/* Form title */}
+          <h2 className="font-[family-name:var(--font-lilita)] text-2xl text-charcoal leading-tight">
+            {TITLES[mode]}
+          </h2>
+
+          {/* ── SIGN IN ── */}
+          {mode === "signin" && (
+            <form onSubmit={handleSignin} className="space-y-4">
               <div>
-                <label className={labelCls}>Your name</label>
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-                  placeholder="Fleur Dupont" required className={inputCls} />
+                <label className={labelCls}>Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="ton@email.com"
+                  required
+                  className={inputCls}
+                />
               </div>
 
               <div>
-                <label className={labelCls}>
-                  Username{" "}
-                  <span className="normal-case font-medium text-charcoal/30">
-                    (a–z, 0–9, _)
-                  </span>
-                </label>
+                <label className={labelCls}>Mot de passe</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className={inputCls}
+                />
+              </div>
+
+              {error && (
+                <p className="text-xs font-medium text-pink">{error}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading || !email.trim() || !password}
+                className={submitCls}
+              >
+                {loading ? "Connexion…" : "Se connecter 🌸"}
+              </button>
+
+              <div className="space-y-2 text-center">
+                <p className="text-xs text-charcoal/40">
+                  <button
+                    type="button"
+                    onClick={() => switchMode("reset")}
+                    className={linkCls}
+                  >
+                    Mot de passe oublié ?
+                  </button>
+                </p>
+                <p className="text-xs text-charcoal/40">
+                  Pas encore de compte ?{" "}
+                  <button
+                    type="button"
+                    onClick={() => switchMode("signup")}
+                    className={linkCls}
+                  >
+                    Rejoins-nous
+                  </button>
+                </p>
+              </div>
+            </form>
+          )}
+
+          {/* ── SIGN UP ── */}
+          {mode === "signup" && (
+            <form onSubmit={handleSignup} className="space-y-5">
+              <div>
+                <label className={labelCls}>Ton prénom</label>
                 <input
                   type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value.replace(/\s/g, "").toLowerCase())}
-                  placeholder="fleur"
-                  autoCapitalize="none"
-                  autoCorrect="off"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Fleur"
+                  required
+                  className={inputCls}
+                />
+              </div>
+
+              <div>
+                <label className={labelCls}>Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="ton@email.com"
                   required
                   className={inputCls}
                 />
@@ -242,18 +344,24 @@ export default function AuthPage() {
 
               <div>
                 <label className={labelCls}>
-                  Password{" "}
-                  <span className="normal-case font-medium text-charcoal/30">(min 8 chars)</span>
+                  Mot de passe{" "}
+                  <span className="normal-case font-medium text-charcoal/30">(8 caractères min)</span>
                 </label>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••" required className={inputCls} />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className={inputCls}
+                />
               </div>
 
               {/* Dietary */}
               <div>
                 <label className={labelCls}>
-                  Dietary preferences{" "}
-                  <span className="normal-case font-medium text-charcoal/30">(optional)</span>
+                  Régime alimentaire{" "}
+                  <span className="normal-case font-medium text-charcoal/30">(optionnel)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {DIETARY_OPTIONS.map(({ key, label }) => (
@@ -274,78 +382,99 @@ export default function AuthPage() {
                 </div>
               </div>
 
-              <DrinkBar label="Drinking 🍺 Beer"        value={beerLevel}    onChange={setBeerLevel}   />
-              <DrinkBar label="Drinking 🍷 Wine"        value={wineLevel}    onChange={setWineLevel}   />
-              <DrinkBar label="Drinking 🥃 Hard liquor" value={spiritsLevel} onChange={setSpiritLevel} />
+              <DrinkBar label="Bière 🍺"        value={beerLevel}    onChange={setBeerLevel}   />
+              <DrinkBar label="Vin 🍷"          value={wineLevel}    onChange={setWineLevel}   />
+              <DrinkBar label="Alcool fort 🥃"  value={spiritsLevel} onChange={setSpiritLevel} />
 
               {/* Floral reminder */}
               <div className="rounded-2xl bg-pink/15 border border-pink/25 px-4 py-3.5">
                 <p className="text-sm font-semibold text-charcoal leading-snug">
-                  🌸 Floral outfits only — flowers, petals, garden vibes
+                  🌸 Tenue florale obligatoire — fleurs, pétales, jardins
                 </p>
               </div>
 
-              {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
+              {error && (
+                <p className="text-xs font-semibold text-pink">{error}</p>
+              )}
 
-              <button type="submit" disabled={loading || !name.trim() || !username.trim() || !password}
-                className={submitCls}>
-                {loading ? "Creating account…" : "Join Event 🌸"}
+              <button
+                type="submit"
+                disabled={loading || !name.trim() || !email.trim() || !password}
+                className={submitCls}
+              >
+                {loading ? "Création du compte…" : "Créer mon compte 🌸"}
               </button>
+
+              <p className="text-center text-xs text-charcoal/40">
+                Déjà un compte ?{" "}
+                <button
+                  type="button"
+                  onClick={() => switchMode("signin")}
+                  className={linkCls}
+                >
+                  Se connecter
+                </button>
+              </p>
             </form>
           )}
 
-          {/* ── SIGNIN ── */}
-          {mode === "signin" && (
-            <form onSubmit={handleSignin} className="space-y-5">
-              <div>
-                <label className={labelCls}>Username</label>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value.replace(/\s/g, "").toLowerCase())}
-                  placeholder="fleur"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  required
-                  className={inputCls}
-                />
-              </div>
+          {/* ── FORGOT PASSWORD ── */}
+          {mode === "reset" && (
+            <form onSubmit={handleReset} className="space-y-4">
+              {success ? (
+                <div className="space-y-4">
+                  <p className="text-sm font-semibold text-charcoal text-center py-4">
+                    {success}
+                  </p>
+                  <p className="text-center text-xs text-charcoal/40">
+                    <button
+                      type="button"
+                      onClick={() => switchMode("signin")}
+                      className={linkCls}
+                    >
+                      Retour à la connexion
+                    </button>
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className={labelCls}>Email</label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="ton@email.com"
+                      required
+                      className={inputCls}
+                    />
+                  </div>
 
-              <div>
-                <label className={labelCls}>Password</label>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••" required className={inputCls} />
-              </div>
+                  {error && (
+                    <p className="text-xs font-medium text-pink">{error}</p>
+                  )}
 
-              {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
+                  <button
+                    type="submit"
+                    disabled={loading || !email.trim()}
+                    className={submitCls}
+                  >
+                    {loading ? "Envoi…" : "Envoyer le lien 🌸"}
+                  </button>
 
-              <button type="submit" disabled={loading || !username.trim() || !password}
-                className={submitCls}>
-                {loading ? "Signing in…" : "Sign in 🌸"}
-              </button>
+                  <p className="text-center text-xs text-charcoal/40">
+                    <button
+                      type="button"
+                      onClick={() => switchMode("signin")}
+                      className={linkCls}
+                    >
+                      Retour à la connexion
+                    </button>
+                  </p>
+                </>
+              )}
             </form>
           )}
-
-          {/* Mode toggle */}
-          <p className="text-center text-xs text-charcoal/40">
-            {mode === "signup" ? (
-              <>
-                Already have an account?{" "}
-                <button type="button" onClick={() => switchMode("signin")}
-                  className="font-semibold text-pink hover:underline">
-                  Sign in
-                </button>
-              </>
-            ) : (
-              <>
-                First time?{" "}
-                <button type="button" onClick={() => switchMode("signup")}
-                  className="font-semibold text-pink hover:underline">
-                  Join the event
-                </button>
-              </>
-            )}
-          </p>
 
         </div>
       </div>

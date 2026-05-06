@@ -36,6 +36,17 @@ async function fetchProfile(userId: string): Promise<UserProfile | null> {
   return { ...data, is_admin: data.is_admin ?? false };
 }
 
+// Retries up to 4 times (600 ms apart) to handle the race where onAuthStateChange
+// fires before the users-row upsert in handleSignup has completed.
+async function fetchProfileWithRetry(userId: string): Promise<UserProfile | null> {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const profile = await fetchProfile(userId);
+    if (profile) return profile;
+    if (attempt < 3) await new Promise((r) => setTimeout(r, 600));
+  }
+  return null;
+}
+
 export function useAuth(): AuthState {
   const router   = useRouter();
   const pathname = usePathname();
@@ -50,7 +61,7 @@ export function useAuth(): AuthState {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) setProfile(await fetchProfile(session.user.id));
+      if (session?.user) setProfile(await fetchProfileWithRetry(session.user.id));
       setLoading(false);
     });
 
@@ -60,7 +71,7 @@ export function useAuth(): AuthState {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          setProfile(await fetchProfile(session.user.id));
+          setProfile(await fetchProfileWithRetry(session.user.id));
         } else {
           setProfile(null);
         }
