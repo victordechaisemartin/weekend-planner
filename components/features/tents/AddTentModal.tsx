@@ -5,6 +5,7 @@ import PastelButton from "@/components/ui/PastelButton";
 import { cn } from "@/lib/utils";
 
 type Props = {
+  hostName: string;
   onClose: () => void;
   onSubmit: (data: {
     name: string;
@@ -25,7 +26,7 @@ const inputCls =
 const labelCls =
   "block text-[11px] font-bold uppercase tracking-widest text-charcoal/40 mb-1.5";
 
-export default function AddTentModal({ onClose, onSubmit }: Props) {
+export default function AddTentModal({ hostName, onClose, onSubmit }: Props) {
   const [name, setName] = useState("");
   const [type, setType] = useState<TentType>("Tent");
   const [capacity, setCapacity] = useState(4);
@@ -53,7 +54,12 @@ export default function AddTentModal({ onClose, onSubmit }: Props) {
         <div className="w-10 h-1 rounded-full bg-charcoal/15 mx-auto sm:hidden" />
 
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-charcoal">Add my tent 🌸</h2>
+          <div>
+            <h2 className="text-lg font-bold text-charcoal">Add my tent 🌸</h2>
+            {hostName && (
+              <p className="text-sm text-charcoal/40 mt-0.5">Adding tent as {hostName}</p>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-full bg-charcoal/8 flex items-center justify-center text-charcoal/50 hover:bg-charcoal/12 transition-colors"

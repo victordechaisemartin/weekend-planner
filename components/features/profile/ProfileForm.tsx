@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/useAuth";
 import { cn } from "@/lib/utils";
 import PastelButton from "@/components/ui/PastelButton";
 
 // ── constants ─────────────────────────────────────────────────
-
-const LS_KEY = "lolapabouillet_user_id";
 
 const DIETARY_OPTIONS = [
   { key: "vegetarian", label: "🥬 Vegetarian"         },
@@ -45,11 +44,7 @@ function wineToText(n: number): string {
 
 // ── DrinkBar ─────────────────────────────────────────────────
 
-function DrinkBar({
-  label,
-  value,
-  onChange,
-}: {
+function DrinkBar({ label, value, onChange }: {
   label: string;
   value: number;
   onChange: (v: number) => void;
@@ -82,57 +77,55 @@ function DrinkBar({
 
 // ── ProfileForm ───────────────────────────────────────────────
 
+const inputCls =
+  "w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-sm text-charcoal " +
+  "placeholder:text-charcoal/25 focus:outline-none focus:ring-2 focus:ring-pink/30 focus:bg-white transition-colors";
+
+const labelCls =
+  "block text-[10px] font-extrabold uppercase tracking-[0.15em] text-charcoal/50 mb-2";
+
 export default function ProfileForm() {
-  const [name, setName]               = useState("");
+  const { user, profile, loading: authLoading } = useAuth();
+
+  // Form fields (name is read-only from profile — not editable)
   const [phone, setPhone]             = useState("");
   const [dietary, setDietary]         = useState<string[]>([]);
   const [beerLevel, setBeerLevel]     = useState(0);
   const [wineLevel, setWineLevel]     = useState(0);
   const [spiritsLevel, setSpiritLevel]= useState(0);
 
-  const [isReturning, setIsReturning] = useState(false);
-  const [saving, setSaving]           = useState(false);
-  const [saved, setSaved]             = useState(false);
+  // Save state
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved]   = useState(false);
 
+  // Stats
   const [attendingCount, setAttendingCount] = useState<number | null>(null);
   const [carsCount, setCarsCount]           = useState<number | null>(null);
   const [freeSeats, setFreeSeats]           = useState<number | null>(null);
 
+  // Pre-fill when profile loads
   useEffect(() => {
-    async function init() {
-      // ── Returning user: pre-fill from Supabase ──────────────
-      const storedId = localStorage.getItem(LS_KEY);
-      if (storedId) {
-        setIsReturning(true);
-        const { data } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", storedId)
-          .maybeSingle();
-        if (data) {
-          setName(data.name ?? "");
-          setPhone(data.phone ?? "");
-          setDietary(parseDietary(data.dietary));
-          setBeerLevel(data.beer_level ?? 0);
-          setWineLevel(wineToNum(data.wine_level));
-          setSpiritLevel(data.spirits_level ?? 0);
-        }
-      }
+    if (profile) {
+      setPhone(profile.phone ?? "");
+      setDietary(parseDietary(profile.dietary));
+      setBeerLevel(profile.beer_level ?? 0);
+      setWineLevel(wineToNum(profile.wine_level));
+      setSpiritLevel(profile.spirits_level ?? 0);
+    }
+  }, [profile]);
 
-      // ── Stats: attendees + cars ──────────────────────────────
+  // Fetch stats
+  useEffect(() => {
+    async function fetchStats() {
       const [{ count: userCount }, { data: event }] = await Promise.all([
         supabase.from("users").select("*", { count: "exact", head: true }),
         supabase.from("events").select("id").limit(1).maybeSingle(),
       ]);
-
       setAttendingCount(userCount ?? 0);
 
       if (event?.id) {
         const { data: cars } = await supabase
-          .from("cars")
-          .select("id, seats_total")
-          .eq("event_id", event.id);
-
+          .from("cars").select("id, seats_total").eq("event_id", event.id);
         const carIds = (cars ?? []).map((c) => c.id);
         const { count: passengerCount } = carIds.length
           ? await supabase
@@ -140,13 +133,12 @@ export default function ProfileForm() {
               .select("*", { count: "exact", head: true })
               .in("car_id", carIds)
           : { count: 0 };
-
         const totalSeats = (cars ?? []).reduce((s, c) => s + c.seats_total, 0);
         setCarsCount((cars ?? []).length);
         setFreeSeats(Math.max(0, totalSeats - (passengerCount ?? 0)));
       }
     }
-    init();
+    fetchStats();
   }, []);
 
   function toggleDietary(key: string) {
@@ -155,17 +147,14 @@ export default function ProfileForm() {
     );
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!user || !profile) return;
     setSaving(true);
 
-    const existingId = localStorage.getItem(LS_KEY);
-    const id = existingId ?? crypto.randomUUID();
-
     await supabase.from("users").upsert({
-      id,
-      name: name.trim(),
+      id: user.id,
+      name: profile.name,
       phone: phone.trim() || null,
       dietary: serializeDietary(dietary),
       beer_level: beerLevel,
@@ -174,23 +163,30 @@ export default function ProfileForm() {
       snoring_warning: false,
     });
 
-    localStorage.setItem(LS_KEY, id);
-    setIsReturning(true);
-
-    // Bump attending count optimistically
-    setAttendingCount((n) => (existingId ? n : (n ?? 0) + 1));
-
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
 
-  // ── render ────────────────────────────────────────────────
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+  }
+
+  // ── Render ────────────────────────────────────────────────────
+
+  // Show spinner while auth loads, redirecting, or profile not yet fetched
+  if (authLoading || !user || !profile) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <span className="animate-pulse text-4xl">🌸</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
 
-      {/* ── 1. Header ── */}
+      {/* ── Header ── */}
       <div className="px-6 pt-10 pb-4 space-y-1.5">
         <p className="text-xs font-extrabold uppercase tracking-widest text-charcoal/40">
           You&apos;re invited to
@@ -209,7 +205,7 @@ export default function ProfileForm() {
         </p>
       </div>
 
-      {/* ── 2. Stat boxes ── */}
+      {/* ── Stats ── */}
       <div className="px-4 flex gap-3">
         <div className="flex-1 bg-white rounded-3xl p-4 text-center shadow-sm">
           <p className="text-3xl font-black text-charcoal tabular-nums">
@@ -219,7 +215,6 @@ export default function ProfileForm() {
             Attending
           </p>
         </div>
-
         <div className="flex-1 bg-white rounded-3xl p-4 text-center shadow-sm">
           <p className="text-3xl font-black text-charcoal tabular-nums">
             {carsCount ?? "—"}
@@ -235,92 +230,55 @@ export default function ProfileForm() {
         </div>
       </div>
 
-      {/* ── 3. Join form ── */}
-      <div className="px-4">
+      {/* ── Profile form ── */}
+      <div className="px-4 pb-6">
         <div className="bg-white rounded-3xl shadow-sm p-6 space-y-5">
-          <h2 className="text-base font-extrabold text-charcoal">
-            {isReturning ? "Update your info" : "Join this event"}
-          </h2>
+          <p
+            className="font-[family-name:var(--font-lilita)] text-2xl text-charcoal leading-snug"
+          >
+            Bonjour, {profile.name} 🌸
+          </p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-
-            {/* Name */}
+          <form onSubmit={handleSave} className="space-y-5">
             <div>
-              <label className="block text-[10px] font-extrabold uppercase tracking-[0.15em] text-charcoal/50 mb-2">
-                Your name
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Fleur Dupont"
-                required
-                className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-sm text-charcoal placeholder:text-charcoal/25 focus:outline-none focus:ring-2 focus:ring-pink/30 focus:bg-white transition-colors"
-              />
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label className="block text-[10px] font-extrabold uppercase tracking-[0.15em] text-charcoal/50 mb-2">
-                Your phone number
-              </label>
+              <label className={labelCls}>Phone number</label>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+33 6 12 34 56 78"
-                className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-sm text-charcoal placeholder:text-charcoal/25 focus:outline-none focus:ring-2 focus:ring-pink/30 focus:bg-white transition-colors"
+                className={inputCls}
               />
             </div>
 
             {/* Dietary */}
             <div>
-              <label className="block text-[10px] font-extrabold uppercase tracking-[0.15em] text-charcoal/50 mb-2">
+              <label className={labelCls}>
                 Dietary preferences{" "}
                 <span className="normal-case font-medium text-charcoal/30">(optional)</span>
               </label>
               <div className="flex flex-wrap gap-2">
-                {DIETARY_OPTIONS.map(({ key, label }) => {
-                  const active = dietary.includes(key);
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => toggleDietary(key)}
-                      className={cn(
-                        "rounded-full px-3.5 py-2 text-sm font-semibold transition-all duration-150 border",
-                        active
-                          ? "bg-mint text-charcoal border-mint/50 shadow-sm"
-                          : "bg-gray-100 text-charcoal/55 border-transparent hover:bg-gray-200"
-                      )}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
+                {DIETARY_OPTIONS.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => toggleDietary(key)}
+                    className={cn(
+                      "rounded-full px-3.5 py-2 text-sm font-semibold transition-all duration-150 border",
+                      dietary.includes(key)
+                        ? "bg-mint text-charcoal border-mint/50 shadow-sm"
+                        : "bg-gray-100 text-charcoal/55 border-transparent hover:bg-gray-200"
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Beer */}
-            <DrinkBar
-              label="Drinking 🍺 Beer"
-              value={beerLevel}
-              onChange={setBeerLevel}
-            />
-
-            {/* Wine */}
-            <DrinkBar
-              label="Drinking 🍷 Wine"
-              value={wineLevel}
-              onChange={setWineLevel}
-            />
-
-            {/* Hard liquor */}
-            <DrinkBar
-              label="Drinking 🥃 Hard liquor"
-              value={spiritsLevel}
-              onChange={setSpiritLevel}
-            />
+            <DrinkBar label="Drinking 🍺 Beer"        value={beerLevel}    onChange={setBeerLevel}   />
+            <DrinkBar label="Drinking 🍷 Wine"        value={wineLevel}    onChange={setWineLevel}   />
+            <DrinkBar label="Drinking 🥃 Hard liquor" value={spiritsLevel} onChange={setSpiritLevel} />
 
             {/* Floral reminder */}
             <div className="rounded-2xl bg-pink/15 border border-pink/25 px-4 py-3.5">
@@ -329,17 +287,26 @@ export default function ProfileForm() {
               </p>
             </div>
 
-            {/* Submit */}
             <PastelButton
               type="submit"
               variant="pink"
               fullWidth
-              disabled={saving || !name.trim()}
+              disabled={saving}
             >
-              {saved ? "Joined! ✓" : saving ? "Saving…" : "Join Event"}
+              {saved ? "Saved ✓" : saving ? "Saving…" : "Save changes 🌸"}
             </PastelButton>
-
           </form>
+
+          {/* Sign out */}
+          <div className="pt-2 text-center">
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="text-xs text-charcoal/35 hover:text-charcoal/60 transition-colors underline underline-offset-2"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </div>
     </div>

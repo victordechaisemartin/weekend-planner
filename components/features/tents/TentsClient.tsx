@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/useAuth";
 import PageHeader from "@/components/ui/PageHeader";
 import PastelButton from "@/components/ui/PastelButton";
 import FlowerDivider from "@/components/ui/FlowerDivider";
@@ -47,7 +48,9 @@ async function loadTents(eventId: string): Promise<TentData[]> {
 // ── component ─────────────────────────────────────────────────
 
 export default function TentsClient() {
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const { user, profile, loading: authLoading } = useAuth();
+  const currentUserId = user?.id ?? null;
+
   const [eventId, setEventId] = useState<string | null>(null);
   const [tents, setTents] = useState<TentData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,12 +63,11 @@ export default function TentsClient() {
   }, []);
 
   useEffect(() => {
+    if (authLoading || !user) return;
+
     async function init() {
-      const [{ data: { user } }, { data: event }] = await Promise.all([
-        supabase.auth.getUser(),
-        supabase.from("events").select("id").limit(1).maybeSingle(),
-      ]);
-      setCurrentUserId(user?.id ?? null);
+      const { data: event } = await supabase
+        .from("events").select("id").limit(1).maybeSingle();
       if (!event?.id) { setLoading(false); return; }
       setEventId(event.id);
       const data = await loadTents(event.id);
@@ -73,7 +75,7 @@ export default function TentsClient() {
       setLoading(false);
     }
     init();
-  }, []);
+  }, [authLoading, user]);
 
   async function handleJoin(tentId: string) {
     if (!currentUserId || !eventId) return;
@@ -144,7 +146,7 @@ export default function TentsClient() {
 
   // ── render ─────────────────────────────────────────────────
 
-  if (loading) {
+  if (authLoading || !profile || loading) {
     return (
       <div className="flex items-center justify-center py-24">
         <span className="animate-pulse text-4xl">🌸</span>
@@ -205,6 +207,7 @@ export default function TentsClient() {
 
       {showModal && (
         <AddTentModal
+          hostName={profile.name}
           onClose={() => setShowModal(false)}
           onSubmit={handleAddTent}
         />

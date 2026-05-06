@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/useAuth";
 import PageHeader from "@/components/ui/PageHeader";
 import PastelButton from "@/components/ui/PastelButton";
 import CarCard, { type CarData } from "./CarCard";
@@ -46,7 +47,9 @@ async function loadCars(eventId: string): Promise<CarData[]> {
 // ── component ─────────────────────────────────────────────────
 
 export default function CarsClient() {
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const { user, profile, loading: authLoading } = useAuth();
+  const currentUserId = user?.id ?? null;
+
   const [eventId, setEventId] = useState<string | null>(null);
   const [cars, setCars] = useState<CarData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,13 +62,11 @@ export default function CarsClient() {
   }, []);
 
   useEffect(() => {
-    async function init() {
-      const [{ data: { user } }, { data: event }] = await Promise.all([
-        supabase.auth.getUser(),
-        supabase.from("events").select("id").limit(1).maybeSingle(),
-      ]);
+    if (authLoading || !user) return;
 
-      setCurrentUserId(user?.id ?? null);
+    async function init() {
+      const { data: event } = await supabase
+        .from("events").select("id").limit(1).maybeSingle();
 
       if (!event?.id) { setLoading(false); return; }
       setEventId(event.id);
@@ -75,7 +76,7 @@ export default function CarsClient() {
       setLoading(false);
     }
     init();
-  }, []);
+  }, [authLoading, user]);
 
   async function handleJoin(carId: string) {
     if (!currentUserId || !eventId) return;
@@ -127,7 +128,7 @@ export default function CarsClient() {
 
   // ── render ─────────────────────────────────────────────────
 
-  if (loading) {
+  if (authLoading || !profile || loading) {
     return (
       <div className="flex items-center justify-center py-24">
         <span className="animate-pulse text-4xl">🌸</span>
@@ -185,6 +186,7 @@ export default function CarsClient() {
 
       {showModal && (
         <AddCarModal
+          driverName={profile.name}
           onClose={() => setShowModal(false)}
           onSubmit={handleAddCar}
         />
