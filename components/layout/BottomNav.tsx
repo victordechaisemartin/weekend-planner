@@ -5,6 +5,16 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   {
+    href: "/profile",
+    label: "Profile",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+        <circle cx="12" cy="8" r="4" stroke="currentColor" />
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" />
+      </svg>
+    ),
+  },
+  {
     href: "/announcements",
     label: "News",
     icon: (
@@ -22,17 +32,6 @@ const navItems = [
         <path d="M9 18V5l12-2v13" stroke="currentColor" />
         <circle cx="6" cy="18" r="3" stroke="currentColor" />
         <circle cx="18" cy="16" r="3" stroke="currentColor" />
-      </svg>
-    ),
-  },
-  {
-    href: "/map",
-    label: "Map",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" stroke="currentColor" />
-        <line x1="8" y1="2" x2="8" y2="18" stroke="currentColor" />
-        <line x1="16" y1="6" x2="16" y2="22" stroke="currentColor" />
       </svg>
     ),
   },
@@ -59,12 +58,13 @@ const navItems = [
     ),
   },
   {
-    href: "/profile",
-    label: "Profile",
+    href: "/map",
+    label: "Map",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-        <circle cx="12" cy="8" r="4" stroke="currentColor" />
-        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" />
+        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" stroke="currentColor" />
+        <line x1="8" y1="2" x2="8" y2="18" stroke="currentColor" />
+        <line x1="16" y1="6" x2="16" y2="22" stroke="currentColor" />
       </svg>
     ),
   },

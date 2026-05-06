@@ -124,20 +124,23 @@ export default function PlanningPage() {
 
       {/* ── Tab toggles ── */}
       <div className="flex gap-2 px-4 pt-4 pb-2">
-        {(["artists", "planning"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={cn(
-              "flex-1 py-2.5 rounded-full text-sm font-semibold transition-all duration-150",
-              tab === t
-                ? "bg-pink text-white shadow-[0_4px_14px_0_rgba(244,167,185,0.45)]"
-                : "border border-pink text-pink bg-transparent hover:bg-pink/10"
-            )}
-          >
-            {t === "artists" ? "🎧 Artists" : "📅 Planning"}
-          </button>
-        ))}
+        <button
+          onClick={() => setTab("artists")}
+          className={cn(
+            "flex-1 py-2.5 rounded-full text-sm font-semibold transition-all duration-150",
+            tab === "artists"
+              ? "bg-pink text-white shadow-[0_4px_14px_0_rgba(244,167,185,0.45)]"
+              : "border border-pink text-pink bg-transparent hover:bg-pink/10"
+          )}
+        >
+          🎧 Artists
+        </button>
+        <button
+          disabled
+          className="flex-1 py-2.5 rounded-full text-sm font-semibold border border-pink text-pink bg-transparent opacity-40 cursor-not-allowed"
+        >
+          📅 Planning
+        </button>
       </div>
 
       {/* ── Tab 1: Artists ── */}

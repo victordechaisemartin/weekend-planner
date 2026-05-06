@@ -190,18 +190,23 @@ export default function ProfileForm() {
   return (
     <div className="space-y-4">
 
-      {/* ── 1. Event card ── */}
-      <div className="bg-violet-200 px-6 pt-10 pb-8 text-violet-900">
-        <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-violet-900/55 mb-3">
+      {/* ── 1. Header ── */}
+      <div className="px-6 pt-10 pb-4 space-y-1.5">
+        <p className="text-xs font-extrabold uppercase tracking-widest text-charcoal/40">
           You&apos;re invited to
         </p>
-        <h1 className="text-[2rem] font-black tracking-tight leading-none mb-5">
+        <h1
+          className="font-[family-name:var(--font-lilita)] text-4xl uppercase leading-none"
+          style={{ WebkitTextStroke: "2px #2D2D2D", color: "white" }}
+        >
           Lolapabouillet 🌸
         </h1>
-        <div className="space-y-1.5 text-sm font-medium text-violet-900/75">
-          <p>📅 Fri, 22 May 2026 at 19:00</p>
-          <p>📍 Villeneuve-en-Perseigne</p>
-        </div>
+        <p className="text-xs font-semibold text-charcoal/35 uppercase tracking-[0.2em]">
+          Fri, 22 May 2026 · 19:00
+        </p>
+        <p className="text-xs font-semibold text-charcoal/35 uppercase tracking-[0.2em]">
+          18 route du Passoir
+        </p>
       </div>
 
       {/* ── 2. Stat boxes ── */}

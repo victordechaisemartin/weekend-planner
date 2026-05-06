@@ -20,6 +20,48 @@ const cardStyles: Record<Variant, string> = {
   mint:     "bg-mint/30 border-mint/40",
 };
 
+function isAllCaps(line: string): boolean {
+  const t = line.trim();
+  return t.length > 0 && /[A-Z]/.test(t) && !/[a-z]/.test(t);
+}
+
+function startsWithEmoji(line: string): boolean {
+  const cp = line.trim().codePointAt(0) ?? 0;
+  return cp > 127;
+}
+
+function splitEmojiLine(line: string): [string, string] {
+  const m = line.match(/^(\S+)\s+(.*)/);
+  return m ? [m[1], m[2]] : [line, ""];
+}
+
+function renderMessageLine(line: string, i: number) {
+  if (line.trim() === "") {
+    return <div key={i} className="mb-3" />;
+  }
+  if (isAllCaps(line)) {
+    return (
+      <p key={i} className="font-extrabold text-base mb-1 text-charcoal">
+        {line}
+      </p>
+    );
+  }
+  if (startsWithEmoji(line)) {
+    const [emoji, text] = splitEmojiLine(line);
+    return (
+      <p key={i} className="flex items-start gap-1 mb-1 text-sm text-charcoal/90">
+        <span>{emoji}</span>
+        <span>{text}</span>
+      </p>
+    );
+  }
+  return (
+    <p key={i} className="text-sm leading-relaxed mb-1 text-charcoal/90">
+      {line}
+    </p>
+  );
+}
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-GB", {
     day:    "numeric",
@@ -58,22 +100,8 @@ export default function AnnouncementCard({ announcement, variant }: Props) {
         </span>
       )}
 
-      <div className="space-y-2">
-        {announcement.message
-          .split("\n")
-          .filter((line) => line.trim() !== "")
-          .map((line, i) => (
-            <p
-              key={i}
-              className={`text-sm leading-relaxed ${
-                i === 0
-                  ? "font-medium text-charcoal"
-                  : "font-normal text-charcoal/90"
-              }`}
-            >
-              {line}
-            </p>
-          ))}
+      <div>
+        {announcement.message.split("\n").map((line, i) => renderMessageLine(line, i))}
       </div>
 
       <p className="text-[11px] text-charcoal/40 font-medium">
