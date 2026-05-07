@@ -24,7 +24,7 @@ type Props = {
 };
 
 const labelCls = "block text-[11px] font-bold uppercase tracking-widest text-charcoal/40 mb-1.5";
-const inputCls =
+// const inputCls =
   "w-full rounded-2xl bg-white/80 border border-white px-4 py-2.5 text-sm text-charcoal " +
   "focus:outline-none focus:ring-2 focus:ring-lavender/40";
 
