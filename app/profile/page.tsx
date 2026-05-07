@@ -106,27 +106,30 @@ export default function ProfilePage() {
     if (!authLoading && !user) router.replace("/auth");
   }, [authLoading, user, router]);
 
-  // Fetch profile row immediately — uses the stored session token directly,
-  // no need to wait for onAuthStateChange to propagate through React state.
+  // Fetch profile inside onAuthStateChange so it runs only once the session
+  // is confirmed ready — getSession() can return null with cookie-based auth
+  // if called before the client has parsed the cookies on first mount.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session?.user) { setLoading(false); return; }
-      supabase
-        .from("users")
-        .select("*")
-        .eq("id", session.user.id)
-        .single()
-        .then(({ data: profile }) => {
-          if (profile) {
-            setProfileName(profile.name);
-            setDietary(parseDietary(profile.dietary));
-            setBeerLevel(profile.beer_level ?? 0);
-            setWineLevel(wineToNum(profile.wine_level));
-            setSpiritLevel(profile.spirits_level ?? 0);
-          }
-          setLoading(false);
-        });
-    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (!session?.user) { setLoading(false); return; }
+        const { data } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+        console.log("profile loaded:", data);
+        if (data) {
+          setProfileName(data.name);
+          setDietary(parseDietary(data.dietary));
+          setBeerLevel(data.beer_level ?? 0);
+          setWineLevel(wineToNum(data.wine_level));
+          setSpiritLevel(data.spirits_level ?? 0);
+        }
+        setLoading(false);
+      }
+    );
+    return () => subscription.unsubscribe();
   }, []);
 
   function toggleDietary(key: string) {

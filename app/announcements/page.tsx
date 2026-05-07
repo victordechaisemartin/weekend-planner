@@ -36,11 +36,15 @@ export default function AnnouncementsPage() {
         supabase.from("users").select("*", { count: "exact", head: true }),
         getEventId(),
       ]);
-      setParticipantCount(userCount ?? 0);
+      console.log("user count:", userCount);
+      // Do NOT default to 0 — null means the query failed or was blocked by RLS,
+      // which renders as "—" so it's visually distinct from a genuine zero.
+      setParticipantCount(userCount);
 
       if (eventId) {
         const { data: cars } = await supabase
           .from("cars").select("id, seats_total").eq("event_id", eventId);
+        console.log("cars count:", (cars ?? []).length);
         const carIds = (cars ?? []).map((c) => c.id);
         const { count: passengerCount } = carIds.length
           ? await supabase
@@ -54,7 +58,14 @@ export default function AnnouncementsPage() {
       }
     }
 
+    // Run once on mount (covers cases where session is already in cookies).
+    // Also re-run when the session is confirmed via onAuthStateChange — the
+    // events table requires authenticated access, and createBrowserClient
+    // parses cookies asynchronously so the first mount call can fire too early.
     fetchStats();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => { if (session) fetchStats(); }
+    );
 
     const channel = supabase
       .channel("live-stats")
@@ -70,7 +81,10 @@ export default function AnnouncementsPage() {
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      subscription.unsubscribe();
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const pinned = announcements.filter((a) => a.pinned);
