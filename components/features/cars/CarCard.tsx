@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import type { Car } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import PastelButton from "@/components/ui/PastelButton";
 
 type Passenger = { id: string; name: string };
