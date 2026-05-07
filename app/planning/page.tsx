@@ -60,10 +60,13 @@ const LINEUP: DJEntry[] = [
 ];
 
 const CLOUDS = [
-  { top: "10%", duration: "40s", delay: "0s",    width: 180 },
-  { top: "30%", duration: "55s", delay: "-18s",  width: 240 },
+  { top: "5%",  duration: "40s", delay: "0s",    width: 180 },
+  { top: "18%", duration: "62s", delay: "-25s",  width: 140 },
+  { top: "33%", duration: "55s", delay: "-18s",  width: 240 },
+  { top: "48%", duration: "75s", delay: "-40s",  width: 170 },
   { top: "62%", duration: "70s", delay: "-35s",  width: 160 },
-  { top: "82%", duration: "45s", delay: "-10s",  width: 200 },
+  { top: "74%", duration: "48s", delay: "-12s",  width: 210 },
+  { top: "88%", duration: "45s", delay: "-10s",  width: 200 },
 ];
 
 // ── Garland header ────────────────────────────────────────────
@@ -159,8 +162,7 @@ export default function PlanningPage() {
       {/* ── Tab 1: Artists — festival poster ── */}
       {tab === "artists" && (
         <div
-          className="relative overflow-x-hidden scroll-smooth"
-          style={{ background: "#FEFAE8" }}
+          className="relative overflow-x-hidden scroll-smooth bg-cream"
         >
           <style>{`
             @keyframes drift {
@@ -290,15 +292,6 @@ export default function PlanningPage() {
                     {photoEl}
                     {textEl}
                   </div>
-                  {i < LINEUP.length - 1 && (
-                    <hr
-                      style={{
-                        margin: "0 2rem",
-                        border: "none",
-                        borderTop: "1px dashed rgba(45,45,45,0.15)",
-                      }}
-                    />
-                  )}
                 </div>
               );
             })}
