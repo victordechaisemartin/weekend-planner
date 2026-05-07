@@ -260,13 +260,16 @@ export default function MapClient() {
               }}
             >
               <Tooltip permanent direction="top" offset={[0, -18]}>
-                {car.driver.name}
+                {car.driver.name}&apos;s car 🚗
               </Tooltip>
 
               <Popup>
                 <div style={{ padding: "14px 18px", minWidth: 210 }}>
-                  <p style={{ fontWeight: 800, fontSize: 14, color: "#2D2D2D", margin: "0 0 8px" }}>
-                    🌸 {car.driver.name}
+                  <p style={{ fontWeight: 800, fontSize: 14, color: "#2D2D2D", margin: "0 0 4px" }}>
+                    🚗 {car.driver.name}&apos;s car
+                  </p>
+                  <p style={{ fontSize: 11, color: "rgba(45,45,45,0.45)", margin: "0 0 8px", fontWeight: 600 }}>
+                    {car.driver.name}
                   </p>
 
                   <p style={{ fontSize: 12, color: "rgba(45,45,45,0.6)", margin: "0 0 4px", display: "flex", gap: 5, alignItems: "flex-start" }}>

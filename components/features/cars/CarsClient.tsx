@@ -18,6 +18,7 @@ type RawCarRow = {
   id: string;
   event_id: string;
   driver_id: string;
+  name: string | null;
   address: string;
   seats_total: number;
   departure_datetime: string;
@@ -45,6 +46,8 @@ async function loadCars(): Promise<CarData[]> {
     id: row.id,
     event_id: row.event_id,
     driver_id: row.driver_id,
+    // Fall back to "<driver>'s car" for cars created before the name column existed
+    name: row.name ?? `${row.driver?.name ?? "Unknown"}'s car`,
     address: row.address,
     seats_total: row.seats_total,
     departure_datetime: row.departure_datetime,
@@ -67,6 +70,7 @@ export default function CarsClient() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [joinToast, setJoinToast] = useState(false);
 
   // Fires immediately — Supabase client uses the stored token without waiting
   // for onAuthStateChange to propagate through React state.
@@ -83,25 +87,55 @@ export default function CarsClient() {
   }, []);
 
   async function handleJoin(carId: string) {
-    if (!currentUserId) return;
+    // Fall back to getSession() if useAuth hasn't propagated yet — this ensures
+    // the user ID is always available even if onAuthStateChange fires after mount.
+    const userId = currentUserId
+      ?? (await supabase.auth.getSession()).data.session?.user?.id
+      ?? null;
+    console.log("joining car:", carId, "user:", userId);
+    if (!userId) return;
     setBusy(true);
-    await supabase
+    const { error } = await supabase
       .from("car_passengers")
-      .insert({ car_id: carId, user_id: currentUserId });
+      .insert({ car_id: carId, user_id: userId });
+    if (error) {
+      console.error("join car error:", error);
+      setBusy(false);
+      return;
+    }
     await refresh();
     setBusy(false);
+    setJoinToast(true);
+    setTimeout(() => setJoinToast(false), 2000);
   }
 
   async function handleLeave(carId: string) {
-    if (!currentUserId) return;
+    const userId = currentUserId
+      ?? (await supabase.auth.getSession()).data.session?.user?.id
+      ?? null;
+    if (!userId) return;
     setBusy(true);
     await supabase
       .from("car_passengers")
       .delete()
       .eq("car_id", carId)
-      .eq("user_id", currentUserId);
+      .eq("user_id", userId);
     await refresh();
     setBusy(false);
+  }
+
+  async function handleEdit(carId: string, form: { address: string; date: string; time: string }) {
+    const departure_datetime = new Date(`${form.date}T${form.time}:00`).toISOString();
+    await supabase.from("cars")
+      .update({ address: form.address, departure_datetime })
+      .eq("id", carId);
+    await refresh();
+  }
+
+  async function handleDelete(carId: string) {
+    await supabase.from("car_passengers").delete().eq("car_id", carId);
+    await supabase.from("cars").delete().eq("id", carId);
+    await refresh();
   }
 
   async function handleAddCar(form: {
@@ -114,9 +148,11 @@ export default function CarsClient() {
     const eventId = await getEventId();
     if (!eventId) return;
     const departure_datetime = new Date(`${form.date}T${form.time}:00`).toISOString();
+    const carName = profile?.name ? `${profile.name}'s car` : "My car";
     await supabase.from("cars").insert({
       event_id: eventId,
       driver_id: currentUserId,
+      name: carName,
       address: form.address,
       seats_total: form.seats,
       departure_datetime,
@@ -174,6 +210,13 @@ export default function CarsClient() {
           </div>
         )}
 
+        {/* Join toast */}
+        {joinToast && (
+          <div className="rounded-2xl bg-mint/30 border border-mint/40 px-4 py-3 text-center">
+            <p className="text-sm font-bold text-[#3a8c78]">Tu as rejoint cette voiture 🌸</p>
+          </div>
+        )}
+
         {/* Car list */}
         {cars.length === 0 ? (
           <div className="py-16 text-center space-y-2">
@@ -190,6 +233,8 @@ export default function CarsClient() {
               currentUserId={currentUserId}
               onJoin={handleJoin}
               onLeave={handleLeave}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
               busy={busy}
             />
           ))

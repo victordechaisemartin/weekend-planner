@@ -79,16 +79,19 @@ function DrinkBar({ label, value, onChange }: {
 const labelCls =
   "block text-[10px] font-extrabold uppercase tracking-[0.15em] text-charcoal/50 mb-2";
 
+const inputCls =
+  "w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-sm text-charcoal " +
+  "placeholder:text-charcoal/25 focus:outline-none focus:ring-2 focus:ring-pink/30 " +
+  "focus:bg-white transition-colors";
+
 // ── page ──────────────────────────────────────────────────────
 
 export default function ProfilePage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  // Profile
-  const [profileName, setProfileName] = useState<string | null>(null);
-
   // Form fields
+  const [name,         setName]        = useState("");
   const [dietary,      setDietary]     = useState<string[]>([]);
   const [beerLevel,    setBeerLevel]   = useState(0);
   const [wineLevel,    setWineLevel]   = useState(0);
@@ -98,8 +101,9 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   // Save state
-  const [saving, setSaving] = useState(false);
-  const [saved,  setSaved]  = useState(false);
+  const [saving,    setSaving]    = useState(false);
+  const [saved,     setSaved]     = useState(false);
+  const [nameError, setNameError] = useState("");
 
   // Redirect if not logged in
   useEffect(() => {
@@ -120,7 +124,7 @@ export default function ProfilePage() {
           .single();
         console.log("profile loaded:", data);
         if (data) {
-          setProfileName(data.name);
+          setName(data.name ?? "");
           setDietary(parseDietary(data.dietary));
           setBeerLevel(data.beer_level ?? 0);
           setWineLevel(wineToNum(data.wine_level));
@@ -141,13 +145,19 @@ export default function ProfilePage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
+
+    if (!name.trim()) {
+      setNameError("Entre ton nom de festivalier 🌸");
+      return;
+    }
+    setNameError("");
     setSaving(true);
 
     // upsert so the row is created if it doesn't exist yet
     // (update silently no-ops when the row is missing)
     const { error } = await supabase.from("users").upsert({
       id:              user.id,
-      name:            profileName ?? "",
+      name:            name.trim(),
       dietary:         serializeDietary(dietary),
       beer_level:      beerLevel,
       wine_level:      wineToText(wineLevel),
@@ -202,10 +212,27 @@ export default function ProfilePage() {
         <div className="bg-white rounded-3xl shadow-sm p-6 space-y-5">
 
           <p className="font-[family-name:var(--font-lilita)] text-2xl text-charcoal leading-snug">
-            {profileName ? `Bonjour, ${profileName} 🌸` : "Bonjour 🌸"}
+            {name.trim() ? `Bonjour, ${name.trim()} 🌸` : "Bonjour 🌸"}
           </p>
 
           <form onSubmit={handleSave} className="space-y-5">
+
+            {/* Name */}
+            <div>
+              <label className="block text-xs font-extrabold uppercase tracking-widest text-charcoal/40 mb-2">
+                Nom de festivalier 🌸
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => { setName(e.target.value); setNameError(""); }}
+                placeholder="Ton prénom ou surnom"
+                className={inputCls}
+              />
+              {nameError && (
+                <p className="mt-1.5 text-xs font-semibold text-pink">{nameError}</p>
+              )}
+            </div>
 
             {/* Dietary */}
             <div>
