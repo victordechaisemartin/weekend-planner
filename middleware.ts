@@ -39,5 +39,8 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Exclude _next internals, favicon, and any file with an extension
+  // (images, manifest.json, fonts, etc.) so static assets in /public
+  // are always served without an auth check.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|json|woff|woff2|ttf|otf)$).*)"],
 };
