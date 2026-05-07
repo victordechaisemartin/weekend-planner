@@ -149,7 +149,7 @@ export default function AddTentModal({ hostName, error, onClose, onSubmit }: Pro
             >
               <span
                 className={cn(
-                  "absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200",
+                  "absolute left-0 top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200",
                   snoring ? "translate-x-7" : "translate-x-1"
                 )}
               />
