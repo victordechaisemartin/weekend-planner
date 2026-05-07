@@ -5,16 +5,6 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   {
-    href: "/profile",
-    label: "Profile",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-        <circle cx="12" cy="8" r="4" stroke="currentColor" />
-        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" />
-      </svg>
-    ),
-  },
-  {
     href: "/announcements",
     label: "News",
     icon: (
@@ -68,10 +58,22 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    href: "/profile",
+    label: "Profile",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+        <circle cx="12" cy="8" r="4" stroke="currentColor" />
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" />
+      </svg>
+    ),
+  },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
+
+  if (pathname.startsWith("/auth")) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-t border-pink/20">

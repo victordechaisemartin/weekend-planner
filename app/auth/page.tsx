@@ -106,11 +106,12 @@ export default function AuthPage() {
   const [mode, setMode] = useState<Mode>("signin");
 
   // shared across all modes
-  const [email,    setEmail]   = useState("");
-  const [password, setPassword] = useState("");
-  const [error,    setError]   = useState("");
-  const [success,  setSuccess] = useState("");
-  const [loading,  setLoading] = useState(false);
+  const [email,          setEmail]         = useState("");
+  const [password,       setPassword]      = useState("");
+  const [error,          setError]         = useState("");
+  const [success,        setSuccess]       = useState("");
+  const [loading,        setLoading]       = useState(false);
+  const [showSignupHint, setShowSignupHint] = useState(false);
 
   // signup-only
   const [name,         setName]        = useState("");
@@ -123,6 +124,7 @@ export default function AuthPage() {
     setMode(m);
     setError("");
     setSuccess("");
+    setShowSignupHint(false);
   }
 
   function toggleDietary(key: string) {
@@ -144,7 +146,8 @@ export default function AuthPage() {
     });
 
     if (authErr) {
-      setError("Email ou mot de passe incorrect.");
+      setError("Email ou mot de passe incorrect 🌸");
+      setShowSignupHint(true);
       setLoading(false);
       return;
     }
@@ -194,7 +197,7 @@ export default function AuthPage() {
       });
     }
 
-    router.push("/profile");
+    router.push("/announcements");
   }
 
   // ── forgot password ─────────────────────────────────────────
@@ -280,7 +283,21 @@ export default function AuthPage() {
               </div>
 
               {error && (
-                <p className="text-xs font-medium text-pink">{error}</p>
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-pink">{error}</p>
+                  {showSignupHint && (
+                    <p className="text-xs text-charcoal/50">
+                      Pas encore de compte ?{" "}
+                      <button
+                        type="button"
+                        onClick={() => switchMode("signup")}
+                        className={linkCls}
+                      >
+                        Rejoins-nous →
+                      </button>
+                    </p>
+                  )}
+                </div>
               )}
 
               <button
