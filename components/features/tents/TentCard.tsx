@@ -8,7 +8,7 @@ import PastelButton from "@/components/ui/PastelButton";
 export type Guest = { id: string; name: string; snoring_warning: boolean };
 
 export type TentData = Tent & {
-  host: { id: string; name: string };
+  host: { id: string; name: string; snoring_warning: boolean };
   guests: Guest[];
 };
 
@@ -57,7 +57,7 @@ export default function TentCard({
   busy,
 }: Props) {
   const styles = fallbackStyles(tent.type);
-  const freeSpots = tent.capacity - 1 - tent.guests.length;
+  const freeSpots = tent.capacity - tent.guests.length;
   const isFull = freeSpots <= 0;
   const isHost = tent.host_id === currentUserId;
   const isGuest = tent.guests.some((g) => g.id === currentUserId);
@@ -148,15 +148,7 @@ export default function TentCard({
 
       {/* ── Spot icons ── */}
       <div className="flex flex-wrap gap-2">
-        {/* Host — always filled */}
-        <div
-          title={`${tent.host.name} (host)`}
-          className="w-9 h-9 rounded-xl bg-white/55 flex items-center justify-center text-base select-none"
-        >
-          🌸
-        </div>
-
-        {/* Guests — filled */}
+        {/* Filled spots — tent_guests only */}
         {tent.guests.map((g) => (
           <div
             key={g.id}
@@ -181,11 +173,16 @@ export default function TentCard({
       {/* ── Guest list ── */}
       <div className="space-y-2">
         {/* Host row */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-medium text-charcoal">{tent.host.name}</span>
           <span className="text-[10px] font-extrabold uppercase tracking-wider text-charcoal/30">
             host
           </span>
+          {tent.host.snoring_warning && (
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-lavender/40 px-2 py-0.5 text-[10px] font-semibold text-charcoal/60">
+              😴 Ronfleur
+            </span>
+          )}
         </div>
 
         {/* Guest rows */}
@@ -194,13 +191,14 @@ export default function TentCard({
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-sm font-medium text-charcoal truncate">{g.name}</span>
               {g.snoring_warning && (
-                <span className="shrink-0 inline-flex items-center gap-0.5 rounded-full border border-yellow/55 bg-yellow/40 px-2 py-0.5 text-[10px] font-semibold text-[#8a6d00]">
-                  😴 Snores
+                <span className="shrink-0 inline-flex items-center gap-0.5 rounded-full bg-lavender/40 px-2 py-0.5 text-[10px] font-semibold text-charcoal/60">
+                  😴 Ronfleur
                 </span>
               )}
             </div>
 
-            {isHost && (
+            {/* ✕ only for other guests — not the host's own guest row */}
+            {isHost && g.id !== tent.host_id && (
               <button
                 onClick={() => onRemoveGuest(tent.id, g.id)}
                 disabled={busy}
@@ -215,7 +213,29 @@ export default function TentCard({
       </div>
 
       {/* ── Action row ── */}
-      {isHost && !confirmDelete && (
+      {isHost && isGuest && (
+        <PastelButton
+          variant="lavender"
+          onClick={() => onLeave(tent.id)}
+          disabled={busy}
+          className="text-xs py-2 px-5"
+        >
+          Quitter ma tente
+        </PastelButton>
+      )}
+
+      {isHost && !isGuest && !isFull && (
+        <PastelButton
+          variant="lavender"
+          onClick={() => onJoin(tent.id)}
+          disabled={busy}
+          className="text-xs py-2 px-5"
+        >
+          Rejoindre ma tente 🌸
+        </PastelButton>
+      )}
+
+      {isHost && !isGuest && isFull && !confirmDelete && (
         <p className="text-[11px] font-semibold uppercase tracking-wider text-charcoal/30">
           Your tent 🏕️
         </p>

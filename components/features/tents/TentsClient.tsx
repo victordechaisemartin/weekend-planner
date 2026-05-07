@@ -22,7 +22,7 @@ type RawTentRow = {
   name: string;
   type: string;
   capacity: number;
-  host: { id: string; name: string } | null;
+  host: { id: string; name: string; snoring_warning: boolean } | null;
   tent_guests: RawGuestRef[];
 };
 
@@ -36,7 +36,7 @@ async function loadTents(): Promise<TentData[]> {
     .from("tents")
     .select(`
       *,
-      host:users!host_id(id, name),
+      host:users!host_id(id, name, snoring_warning),
       tent_guests(user:users(id, name, snoring_warning))
     `)
     .eq("event_id", eventId);
@@ -48,7 +48,7 @@ async function loadTents(): Promise<TentData[]> {
     name: row.name,
     type: row.type,
     capacity: row.capacity,
-    host: row.host ?? { id: row.host_id, name: "Unknown" },
+    host: row.host ?? { id: row.host_id, name: "Unknown", snoring_warning: false },
     guests: (row.tent_guests ?? [])
       .map((tg) => tg.user)
       .filter((u): u is Guest => u !== null),
@@ -187,7 +187,7 @@ export default function TentsClient() {
   // ── derived stats ──────────────────────────────────────────
 
   const totalFreeSpots = tents.reduce(
-    (sum, t) => sum + Math.max(0, t.capacity - 1 - t.guests.length),
+    (sum, t) => sum + Math.max(0, t.capacity - t.guests.length),
     0
   );
 
