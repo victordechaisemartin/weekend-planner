@@ -186,7 +186,7 @@ export default function AuthPage() {
 
     const userId = data.user?.id;
     if (userId) {
-      await supabase.from("users").upsert({
+      const { error: upsertErr } = await supabase.from("users").upsert({
         id:              userId,
         name:            name.trim(),
         dietary:         serializeDietary(dietary),
@@ -195,6 +195,7 @@ export default function AuthPage() {
         spirits_level:   spiritsLevel,
         snoring_warning: false,
       });
+      if (upsertErr) console.error("users row creation failed:", upsertErr);
     }
 
     router.push("/announcements");

@@ -143,12 +143,19 @@ export default function ProfilePage() {
     if (!user) return;
     setSaving(true);
 
-    await supabase.from("users").update({
-      dietary:       serializeDietary(dietary),
-      beer_level:    beerLevel,
-      wine_level:    wineToText(wineLevel),
-      spirits_level: spiritsLevel,
-    }).eq("id", user.id);
+    // upsert so the row is created if it doesn't exist yet
+    // (update silently no-ops when the row is missing)
+    const { error } = await supabase.from("users").upsert({
+      id:              user.id,
+      name:            profileName ?? "",
+      dietary:         serializeDietary(dietary),
+      beer_level:      beerLevel,
+      wine_level:      wineToText(wineLevel),
+      spirits_level:   spiritsLevel,
+      snoring_warning: false,
+    });
+
+    if (error) console.error("profile save error:", error);
 
     setSaving(false);
     setSaved(true);
