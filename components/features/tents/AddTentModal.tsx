@@ -93,22 +93,28 @@ export default function AddTentModal({ hostName, error, onClose, onSubmit }: Pro
           <div>
             <label className={labelCls}>Type</label>
             <div className="flex rounded-2xl overflow-hidden border border-white/80 shadow-sm">
-              {TYPES.map((t, i) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setType(t)}
-                  className={cn(
-                    "flex-1 py-2.5 text-sm font-semibold transition-all duration-150",
-                    i > 0 && "border-l border-white/60",
-                    type === t
-                      ? "bg-lavender text-charcoal shadow-inner"
-                      : "bg-white/50 text-charcoal/45 hover:bg-white/80"
-                  )}
-                >
-                  {TYPE_ICONS[t]} {t}
-                </button>
-              ))}
+              {TYPES.map((t, i) => {
+                const isDisabled = t === "Room";
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    disabled={isDisabled}
+                    onClick={isDisabled ? undefined : () => setType(t)}
+                    className={cn(
+                      "flex-1 py-2.5 text-sm font-semibold transition-all duration-150",
+                      i > 0 && "border-l border-white/60",
+                      isDisabled
+                        ? "bg-white/50 text-charcoal/45 opacity-40 cursor-not-allowed"
+                        : type === t
+                          ? "bg-lavender text-charcoal shadow-inner"
+                          : "bg-white/50 text-charcoal/45 hover:bg-white/80"
+                    )}
+                  >
+                    {TYPE_ICONS[t]} {t}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

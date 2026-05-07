@@ -61,6 +61,8 @@ export default function TentCard({
   const isFull = freeSpots <= 0;
   const isHost = tent.host_id === currentUserId;
   const isGuest = tent.guests.some((g) => g.id === currentUserId);
+  const hostIsGuest = tent.guests.some((g) => g.id === tent.host_id);
+  const visibleGuests = tent.guests.filter((g) => g.id !== tent.host_id);
 
   // ── edit state ────────────────────────────────────────────────
   const [editing,       setEditing]       = useState(false);
@@ -178,15 +180,15 @@ export default function TentCard({
           <span className="text-[10px] font-extrabold uppercase tracking-wider text-charcoal/30">
             host
           </span>
-          {tent.host.snoring_warning && (
+          {hostIsGuest && tent.host.snoring_warning && (
             <span className="inline-flex items-center gap-0.5 rounded-full bg-lavender/40 px-2 py-0.5 text-[10px] font-semibold text-charcoal/60">
               😴 Ronfleur
             </span>
           )}
         </div>
 
-        {/* Guest rows */}
-        {tent.guests.map((g) => (
+        {/* Guest rows — host filtered out (shown separately above) */}
+        {visibleGuests.map((g) => (
           <div key={g.id} className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-sm font-medium text-charcoal truncate">{g.name}</span>
