@@ -32,15 +32,22 @@ export default function AnnouncementsPage() {
   // Fetch live stats + subscribe to Realtime updates
   useEffect(() => {
     async function fetchStats() {
-      const [{ count: userCount }, eventId] = await Promise.all([
-        supabase.from("users").select("*", { count: "exact", head: true }),
-        getEventId(),
-      ]);
+      // Reset to null before each fetch so stale values never linger while
+      // a refetch is in progress — the UI shows "—" until fresh data arrives.
+      setParticipantCount(null);
+
+      // Query public.users directly — not auth.users — for the participant count.
+      // Run this independently so a stale getEventId() cache can't affect it.
+      const { count: userCount } = await supabase
+        .from("users")
+        .select("*", { count: "exact", head: true });
+
       console.log("user count:", userCount);
       // Do NOT default to 0 — null means the query failed or was blocked by RLS,
       // which renders as "—" so it's visually distinct from a genuine zero.
       setParticipantCount(userCount);
 
+      const eventId = await getEventId();
       if (eventId) {
         const { data: cars } = await supabase
           .from("cars").select("id, seats_total").eq("event_id", eventId);
