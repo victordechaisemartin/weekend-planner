@@ -123,24 +123,39 @@ export default function TentsClient() {
     capacity: number;
     snoring: boolean;
   }) {
-    if (!currentUserId) return;
-    const eventId = await getEventId();
-    if (!eventId) return;
-
     console.log("submitting tent:", form);
-    console.log("user id:", currentUserId);
+
+    // Fall back to getSession() if useAuth hasn't propagated yet
+    const userId = currentUserId
+      ?? (await supabase.auth.getSession()).data.session?.user?.id
+      ?? null;
+    console.log("user id:", userId);
+
+    if (!userId) {
+      console.warn("handleAddTent: no user id, aborting");
+      setAddError("Connecte-toi pour ajouter une tente 🌸");
+      return;
+    }
+
+    const eventId = await getEventId();
     console.log("event id:", eventId);
+
+    if (!eventId) {
+      console.warn("handleAddTent: no event id, aborting");
+      setAddError("Erreur lors de la création 🌸 Réessaie !");
+      return;
+    }
 
     setAddError(null);
 
     await supabase
       .from("users")
       .update({ snoring_warning: form.snoring })
-      .eq("id", currentUserId);
+      .eq("id", userId);
 
     const { data, error } = await supabase.from("tents").insert({
       event_id: eventId,
-      host_id: currentUserId,
+      host_id: userId,
       name: form.name,
       type: form.type,
       capacity: form.capacity,
