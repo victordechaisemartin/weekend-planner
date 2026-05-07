@@ -210,14 +210,14 @@ export default function PlanningPage() {
                 <img
                   src={dj.photo}
                   alt={dj.name}
-                  style={{ width: 160, flexShrink: 0, objectFit: "contain" }}
+                  style={{ width: 200, flexShrink: 0, objectFit: "contain" }}
                 />
               ) : (
                 <div
                   aria-hidden
                   style={{
-                    width: 160,
-                    height: 160,
+                    width: 200,
+                    height: 200,
                     flexShrink: 0,
                     borderRadius: "50%",
                     background: "#d1d5db",
