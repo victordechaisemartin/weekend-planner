@@ -19,6 +19,16 @@ const lilitaOne = Lilita_One({
 export const metadata: Metadata = {
   title: "Lolapabouillet 🌸",
   description: "Le plus grand festival du monde 🌸",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/logo-192.png",
+    apple: "/logo-192.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Lolapabouillet 🌸",
+  },
 };
 
 export default function RootLayout({
@@ -28,13 +38,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={lilitaOne.variable}>
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/logo-192.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/logo-192.png" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-      </head>
       <body
         className={`${geistSans.variable} antialiased bg-cream text-charcoal`}
       >
