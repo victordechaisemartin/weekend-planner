@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   hostName: string;
+  error?: string | null;
   onClose: () => void;
   onSubmit: (data: {
     name: string;
@@ -26,7 +27,7 @@ const inputCls =
 const labelCls =
   "block text-[11px] font-bold uppercase tracking-widest text-charcoal/40 mb-1.5";
 
-export default function AddTentModal({ hostName, onClose, onSubmit }: Props) {
+export default function AddTentModal({ hostName, error, onClose, onSubmit }: Props) {
   const [name, setName] = useState("");
   const [type, setType] = useState<TentType>("Tent");
   const [capacity, setCapacity] = useState(4);
@@ -131,27 +132,25 @@ export default function AddTentModal({ hostName, onClose, onSubmit }: Props) {
           </div>
 
           {/* Snoring toggle */}
-          <div className="flex items-center justify-between rounded-2xl bg-white/60 border border-white/80 px-4 py-3">
-            <div>
-              <p className="text-sm font-semibold text-charcoal">😴 I snore</p>
-              <p className="text-xs text-charcoal/40 mt-0.5">
-                Warn your future tent-mates
-              </p>
+          <div className="flex items-center justify-between w-full py-3">
+            <div className="flex flex-col">
+              <span className="font-semibold text-sm text-charcoal">😴 Je ronfle</span>
+              <span className="text-xs text-charcoal/40">Préviens tes futurs co-tenteurs</span>
             </div>
             <button
               type="button"
               role="switch"
               aria-checked={snoring}
-              onClick={() => setSnoring((v) => !v)}
+              onClick={() => setSnoring(!snoring)}
               className={cn(
-                "relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-lavender/50",
-                snoring ? "bg-pink" : "bg-charcoal/15"
+                "relative w-12 h-6 rounded-full transition-colors duration-200",
+                snoring ? "bg-pink" : "bg-charcoal/20"
               )}
             >
               <span
                 className={cn(
-                  "pointer-events-none absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200",
-                  snoring ? "translate-x-[26px]" : "translate-x-0.5"
+                  "absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200",
+                  snoring ? "translate-x-7" : "translate-x-1"
                 )}
               />
             </button>
@@ -165,6 +164,10 @@ export default function AddTentModal({ hostName, onClose, onSubmit }: Props) {
           >
             {submitting ? "Adding…" : "Add tent 🌸"}
           </PastelButton>
+
+          {error && (
+            <p className="text-xs font-semibold text-pink text-center pt-1">{error}</p>
+          )}
         </form>
       </div>
     </div>

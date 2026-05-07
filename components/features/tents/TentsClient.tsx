@@ -68,6 +68,7 @@ export default function TentsClient() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
 
   // Fires immediately — Supabase client uses the stored token without waiting
   // for onAuthStateChange to propagate through React state.
@@ -126,18 +127,32 @@ export default function TentsClient() {
     const eventId = await getEventId();
     if (!eventId) return;
 
+    console.log("submitting tent:", form);
+    console.log("user id:", currentUserId);
+    console.log("event id:", eventId);
+
+    setAddError(null);
+
     await supabase
       .from("users")
       .update({ snoring_warning: form.snoring })
       .eq("id", currentUserId);
 
-    await supabase.from("tents").insert({
+    const { data, error } = await supabase.from("tents").insert({
       event_id: eventId,
       host_id: currentUserId,
       name: form.name,
       type: form.type,
       capacity: form.capacity,
     });
+
+    console.log("supabase response:", data, error);
+
+    if (error) {
+      console.error("add tent error:", error);
+      setAddError("Erreur lors de la création 🌸 Réessaie !");
+      return;
+    }
 
     setShowModal(false);
     await refresh();
@@ -179,7 +194,7 @@ export default function TentsClient() {
     <>
       <PageHeader title="⛺ Where are you sleeping, flower? 🌼" />
 
-      <div className="px-4 pb-10 space-y-4">
+      <div className="px-4 pb-28 space-y-4">
         {/* Stats badges */}
         {tents.length > 0 && (
           <div className="flex gap-2 flex-wrap">
@@ -229,7 +244,8 @@ export default function TentsClient() {
       {showModal && (
         <AddTentModal
           hostName={profile?.name ?? ""}
-          onClose={() => setShowModal(false)}
+          error={addError}
+          onClose={() => { setShowModal(false); setAddError(null); }}
           onSubmit={handleAddTent}
         />
       )}
