@@ -197,7 +197,7 @@ export default function CarsClient() {
     <>
       <PageHeader title="Cars 🚗" subtitle="Coordinate your road trip" />
 
-      <div className="px-4 pb-10 space-y-4">
+      <div className="px-4 pb-28 space-y-4">
         {/* Stats row */}
         {cars.length > 0 && (
           <div className="flex gap-2">
