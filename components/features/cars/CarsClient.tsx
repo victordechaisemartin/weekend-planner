@@ -70,6 +70,7 @@ export default function CarsClient() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
   const [joinToast, setJoinToast] = useState(false);
 
   // Fires immediately — Supabase client uses the stored token without waiting
@@ -147,9 +148,10 @@ export default function CarsClient() {
     if (!currentUserId) return;
     const eventId = await getEventId();
     if (!eventId) return;
+    setAddError(null);
     const departure_datetime = new Date(`${form.date}T${form.time}:00`).toISOString();
     const carName = profile?.name ? `${profile.name}'s car` : "My car";
-    await supabase.from("cars").insert({
+    const { error } = await supabase.from("cars").insert({
       event_id: eventId,
       driver_id: currentUserId,
       name: carName,
@@ -157,6 +159,11 @@ export default function CarsClient() {
       seats_total: form.seats,
       departure_datetime,
     });
+    if (error) {
+      console.error("add car error:", error);
+      setAddError(error.message);
+      return;
+    }
     setShowModal(false);
     await refresh();
   }
@@ -253,7 +260,8 @@ export default function CarsClient() {
       {showModal && (
         <AddCarModal
           driverName={profile?.name ?? ""}
-          onClose={() => setShowModal(false)}
+          error={addError}
+          onClose={() => { setShowModal(false); setAddError(null); }}
           onSubmit={handleAddCar}
         />
       )}

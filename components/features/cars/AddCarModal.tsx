@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   driverName: string;
+  error?: string | null;
   onClose: () => void;
   onSubmit: (data: {
     address: string;
@@ -21,7 +22,7 @@ const inputCls =
 
 const labelCls = "block text-[11px] font-bold uppercase tracking-widest text-charcoal/40 mb-1.5";
 
-export default function AddCarModal({ driverName, onClose, onSubmit }: Props) {
+export default function AddCarModal({ driverName, error, onClose, onSubmit }: Props) {
   const [address, setAddress] = useState("");
   const [seats, setSeats] = useState(3);
   const [date, setDate] = useState("");
@@ -130,6 +131,10 @@ export default function AddCarModal({ driverName, onClose, onSubmit }: Props) {
           >
             {submitting ? "Adding…" : "Add car 🚗"}
           </PastelButton>
+
+          {error && (
+            <p className="text-xs font-semibold text-pink text-center pt-1">{error}</p>
+          )}
         </form>
       </div>
     </div>
