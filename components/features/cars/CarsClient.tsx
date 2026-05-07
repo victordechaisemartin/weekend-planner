@@ -72,6 +72,7 @@ export default function CarsClient() {
   const [showModal, setShowModal] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [joinToast, setJoinToast] = useState(false);
+  const [editToast, setEditToast] = useState(false);
 
   // Fires immediately — Supabase client uses the stored token without waiting
   // for onAuthStateChange to propagate through React state.
@@ -130,12 +131,32 @@ export default function CarsClient() {
     setBusy(false);
   }
 
-  async function handleEdit(carId: string, form: { address: string; date: string; time: string }) {
+  async function handleEdit(carId: string, form: { address: string; date: string; time: string; seats: number }) {
+    const car = cars.find((c) => c.id === carId);
     const departure_datetime = new Date(`${form.date}T${form.time}:00`).toISOString();
+
+    if (car && form.seats < car.passengers.length) {
+      const toRemove = car.passengers.length - form.seats;
+      const passengersToRemove = car.passengers.slice(-toRemove);
+      const names = passengersToRemove.map((p) => p.name).join(", ");
+      const confirmed = window.confirm(
+        `Réduire à ${form.seats} place(s) supprimera ${toRemove} passager(s) : ${names}. Confirmer ?`
+      );
+      if (!confirmed) return;
+
+      await supabase
+        .from("car_passengers")
+        .delete()
+        .in("user_id", passengersToRemove.map((p) => p.id))
+        .eq("car_id", carId);
+    }
+
     await supabase.from("cars")
-      .update({ address: form.address, departure_datetime })
+      .update({ address: form.address, departure_datetime, seats_total: form.seats })
       .eq("id", carId);
     await refresh();
+    setEditToast(true);
+    setTimeout(() => setEditToast(false), 2000);
   }
 
   async function handleDelete(carId: string) {
@@ -226,6 +247,13 @@ export default function CarsClient() {
         {joinToast && (
           <div className="rounded-2xl bg-mint/30 border border-mint/40 px-4 py-3 text-center">
             <p className="text-sm font-bold text-[#3a8c78]">Tu as rejoint cette voiture 🌸</p>
+          </div>
+        )}
+
+        {/* Edit toast */}
+        {editToast && (
+          <div className="rounded-2xl bg-lavender/30 border border-lavender/40 px-4 py-3 text-center">
+            <p className="text-sm font-bold text-charcoal/70">Voiture mise à jour 🌸</p>
           </div>
         )}
 

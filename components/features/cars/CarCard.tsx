@@ -18,7 +18,7 @@ type Props = {
   currentUserId: string | null;
   onJoin: (carId: string) => void;
   onLeave: (carId: string) => void;
-  onEdit: (carId: string, form: { address: string; date: string; time: string }) => Promise<void>;
+  onEdit: (carId: string, form: { address: string; date: string; time: string; seats: number }) => Promise<void>;
   onDelete: (carId: string) => Promise<void>;
   busy: boolean;
 };
@@ -50,6 +50,7 @@ export default function CarCard({ car, currentUserId, onJoin, onLeave, onEdit, o
   const [editAddress,  setEditAddress]  = useState("");
   const [editDate,     setEditDate]     = useState("");
   const [editTime,     setEditTime]     = useState("");
+  const [editSeats,    setEditSeats]    = useState(car.seats_total);
   const [editSaving,   setEditSaving]   = useState(false);
 
   // ── delete state ──────────────────────────────────────────────
@@ -61,12 +62,13 @@ export default function CarCard({ car, currentUserId, onJoin, onLeave, onEdit, o
     setEditAddress(car.address);
     setEditDate(dt.toISOString().slice(0, 10));
     setEditTime(dt.toTimeString().slice(0, 5));
+    setEditSeats(car.seats_total);
     setEditing(true);
   }
 
   async function submitEdit() {
     setEditSaving(true);
-    await onEdit(car.id, { address: editAddress, date: editDate, time: editTime });
+    await onEdit(car.id, { address: editAddress, date: editDate, time: editTime, seats: editSeats });
     setEditSaving(false);
     setEditing(false);
   }
@@ -254,6 +256,32 @@ export default function CarCard({ car, currentUserId, onJoin, onLeave, onEdit, o
                   className={inputCls}
                 />
               </div>
+              <div>
+                <label className={labelCls}>Places disponibles</label>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditSeats((s) => Math.max(1, s - 1))}
+                    className="w-9 h-9 rounded-full bg-white/80 border border-white text-charcoal/60 font-bold text-lg hover:bg-white transition-colors"
+                  >
+                    −
+                  </button>
+                  <span className="w-8 text-center text-xl font-bold text-charcoal tabular-nums">
+                    {editSeats}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setEditSeats((s) => Math.min(8, s + 1))}
+                    className="w-9 h-9 rounded-full bg-white/80 border border-white text-charcoal/60 font-bold text-lg hover:bg-white transition-colors"
+                  >
+                    +
+                  </button>
+                  <span className="text-xs text-charcoal/40 font-medium">
+                    {car.passengers.length} occupée(s) sur {editSeats}
+                  </span>
+                </div>
+              </div>
+
               <div className="flex gap-3">
                 <div className="flex-1">
                   <label className={labelCls}>Date</label>
