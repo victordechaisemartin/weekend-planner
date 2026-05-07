@@ -145,17 +145,17 @@ export default function CarCard({ car, currentUserId, onJoin, onLeave, onEdit, o
                 🌸
               </div>
             ))}
-            {!isFull &&
+            {!isFull && !isDriver && !isPassenger &&
               Array.from({ length: freeSeats }).map((_, i) => (
                 <button
                   key={i}
-                  onClick={() => !isPassenger && !isDriver && onJoin(car.id)}
-                  disabled={busy || isPassenger || isDriver || !currentUserId}
+                  onClick={() => onJoin(car.id)}
+                  disabled={busy || !currentUserId}
                   aria-label="Reserve a seat"
                   className={cn(
                     "w-9 h-9 rounded-xl border-2 border-dashed flex items-center justify-center",
                     "text-lg font-light transition-all duration-150",
-                    isPassenger || isDriver || !currentUserId
+                    !currentUserId
                       ? "border-charcoal/10 text-charcoal/15 cursor-default"
                       : "border-charcoal/20 text-charcoal/35 hover:border-pink/60 hover:text-pink hover:bg-pink/5 hover:scale-105 active:scale-95 cursor-pointer"
                   )}

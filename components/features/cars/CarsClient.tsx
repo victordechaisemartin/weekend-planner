@@ -95,6 +95,11 @@ export default function CarsClient() {
       ?? null;
     console.log("joining car:", carId, "user:", userId);
     if (!userId) return;
+    const car = cars.find((c) => c.id === carId);
+    if (car && userId === car.driver_id) {
+      console.warn("Driver cannot join their own car");
+      return;
+    }
     setBusy(true);
     const { error } = await supabase
       .from("car_passengers")
