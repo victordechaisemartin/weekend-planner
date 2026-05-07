@@ -25,9 +25,11 @@ export const metadata: Metadata = {
     apple: "/logo-192.png",
   },
   appleWebApp: {
-    capable: true,
     statusBarStyle: "default",
     title: "Lolapabouillet 🌸",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
   },
 };
 

@@ -39,8 +39,7 @@ async function loadTents(): Promise<TentData[]> {
       host:users!host_id(id, name),
       tent_guests(user:users(id, name, snoring_warning))
     `)
-    .eq("event_id", eventId)
-    .order("created_at", { ascending: true });
+    .eq("event_id", eventId);
 
   return ((raw ?? []) as unknown as RawTentRow[]).map((row) => ({
     id: row.id,
