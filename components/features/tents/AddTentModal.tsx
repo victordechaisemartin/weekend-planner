@@ -38,8 +38,14 @@ export default function AddTentModal({ hostName, error, onClose, onSubmit }: Pro
     e.preventDefault();
     if (!name.trim()) return;
     setSubmitting(true);
-    await onSubmit({ name: name.trim(), type, capacity, snoring });
-    setSubmitting(false);
+    try {
+      await onSubmit({ name: name.trim(), type, capacity, snoring });
+      // modal is closed by the parent on success
+    } catch {
+      // error message is set by the parent via the error prop
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -162,7 +168,7 @@ export default function AddTentModal({ hostName, error, onClose, onSubmit }: Pro
             fullWidth
             disabled={submitting || !name.trim()}
           >
-            {submitting ? "Adding…" : "Add tent 🌸"}
+            {submitting ? "Création en cours... 🌸" : "Add tent 🌸"}
           </PastelButton>
 
           {error && (

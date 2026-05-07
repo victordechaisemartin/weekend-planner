@@ -166,9 +166,10 @@ export default function TentsClient() {
     if (error) {
       console.error("add tent error:", error);
       setAddError("Erreur lors de la création 🌸 Réessaie !");
-      return;
+      throw new Error(error.message);
     }
 
+    console.log("tent created, closing modal");
     setShowModal(false);
     await refresh();
   }
