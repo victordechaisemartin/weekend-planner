@@ -116,6 +116,17 @@ export default function TentsClient() {
     setBusy(false);
   }
 
+  async function handleEdit(tentId: string, capacity: number) {
+    await supabase.from("tents").update({ capacity }).eq("id", tentId);
+    await refresh();
+  }
+
+  async function handleDelete(tentId: string) {
+    await supabase.from("tent_guests").delete().eq("tent_id", tentId);
+    await supabase.from("tents").delete().eq("id", tentId);
+    await refresh();
+  }
+
   async function handleAddTent(form: {
     name: string;
     type: string;
@@ -239,6 +250,8 @@ export default function TentsClient() {
               onJoin={handleJoin}
               onLeave={handleLeave}
               onRemoveGuest={handleRemoveGuest}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
               busy={busy}
             />
           ))

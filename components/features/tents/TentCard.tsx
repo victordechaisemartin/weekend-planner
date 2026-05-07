@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { Tent } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import PastelButton from "@/components/ui/PastelButton";
@@ -17,8 +18,15 @@ type Props = {
   onJoin: (tentId: string) => void;
   onLeave: (tentId: string) => void;
   onRemoveGuest: (tentId: string, guestId: string) => void;
+  onEdit: (tentId: string, capacity: number) => Promise<void>;
+  onDelete: (tentId: string) => Promise<void>;
   busy: boolean;
 };
+
+const labelCls = "block text-[11px] font-bold uppercase tracking-widest text-charcoal/40 mb-1.5";
+const inputCls =
+  "w-full rounded-2xl bg-white/80 border border-white px-4 py-2.5 text-sm text-charcoal " +
+  "focus:outline-none focus:ring-2 focus:ring-lavender/40";
 
 const TYPE_STYLES: Record<string, { card: string; typeBadge: string }> = {
   Tent: {
@@ -47,15 +55,46 @@ export default function TentCard({
   onJoin,
   onLeave,
   onRemoveGuest,
+  onEdit,
+  onDelete,
   busy,
 }: Props) {
   const styles = fallbackStyles(tent.type);
-  const freeSpots = tent.capacity - 1 - tent.guests.length; // capacity minus host minus guests
+  const freeSpots = tent.capacity - 1 - tent.guests.length;
   const isFull = freeSpots <= 0;
   const isHost = tent.host_id === currentUserId;
   const isGuest = tent.guests.some((g) => g.id === currentUserId);
 
+  // ── edit state ────────────────────────────────────────────────
+  const [editing,       setEditing]       = useState(false);
+  const [editCapacity,  setEditCapacity]  = useState(tent.capacity);
+  const [editSaving,    setEditSaving]    = useState(false);
+
+  // ── delete state ──────────────────────────────────────────────
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting,      setDeleting]      = useState(false);
+
+  function openEdit() {
+    setEditCapacity(tent.capacity);
+    setEditing(true);
+  }
+
+  async function submitEdit() {
+    setEditSaving(true);
+    await onEdit(tent.id, editCapacity);
+    setEditSaving(false);
+    setEditing(false);
+  }
+
+  async function submitDelete() {
+    setDeleting(true);
+    await onDelete(tent.id);
+    setDeleting(false);
+    setConfirmDelete(false);
+  }
+
   return (
+    <>
     <article className={cn("rounded-3xl border p-5 space-y-4", styles.card)}>
 
       {/* ── Header ── */}
@@ -68,6 +107,27 @@ export default function TentCard({
         </div>
 
         <div className="flex flex-col items-end gap-1.5 shrink-0">
+          {isHost && (
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={openEdit}
+                title="Modifier"
+                className="w-7 h-7 rounded-full bg-charcoal/6 flex items-center justify-center text-sm text-charcoal/50 hover:bg-lavender/40 hover:text-charcoal/80 transition-colors"
+              >
+                ✏️
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                title="Supprimer"
+                className="w-7 h-7 rounded-full bg-charcoal/6 flex items-center justify-center text-sm text-charcoal/50 hover:bg-pink/20 hover:text-pink/80 transition-colors"
+              >
+                🗑️
+              </button>
+            </div>
+          )}
+
           <span
             className={cn(
               "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold",
@@ -158,11 +218,13 @@ export default function TentCard({
       </div>
 
       {/* ── Action row ── */}
-      {isHost ? (
+      {isHost && !confirmDelete && (
         <p className="text-[11px] font-semibold uppercase tracking-wider text-charcoal/30">
           Your tent 🏕️
         </p>
-      ) : isGuest ? (
+      )}
+
+      {!isHost && isGuest && (
         <PastelButton
           variant="lavender"
           onClick={() => onLeave(tent.id)}
@@ -171,7 +233,9 @@ export default function TentCard({
         >
           Leave
         </PastelButton>
-      ) : !isFull ? (
+      )}
+
+      {!isHost && !isGuest && !isFull && (
         <PastelButton
           variant="lavender"
           onClick={() => onJoin(tent.id)}
@@ -180,7 +244,91 @@ export default function TentCard({
         >
           Join 🌼
         </PastelButton>
-      ) : null}
+      )}
+
+      {/* ── Delete confirmation ── */}
+      {confirmDelete && (
+        <div className="rounded-2xl bg-pink/10 border border-pink/25 p-4 space-y-3">
+          <p className="text-sm font-semibold text-charcoal leading-snug">
+            Supprimer ta tente ? Tes invités seront retirés.
+          </p>
+          <div className="flex gap-2">
+            <PastelButton
+              variant="pink"
+              onClick={submitDelete}
+              disabled={deleting}
+              className="text-xs py-2 px-4"
+            >
+              {deleting ? "…" : "Supprimer"}
+            </PastelButton>
+            <PastelButton
+              variant="lavender"
+              onClick={() => setConfirmDelete(false)}
+              disabled={deleting}
+              className="text-xs py-2 px-4"
+            >
+              Annuler
+            </PastelButton>
+          </div>
+        </div>
+      )}
+
     </article>
+
+    {/* ── Edit modal ── */}
+    {editing && (
+      <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
+        <div
+          className="absolute inset-0 bg-charcoal/30 backdrop-blur-sm"
+          onClick={() => !editSaving && setEditing(false)}
+        />
+        <div className="relative w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-cream px-6 pt-5 pb-8 space-y-5 z-[61]">
+          <div className="w-10 h-1 rounded-full bg-charcoal/15 mx-auto sm:hidden" />
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-charcoal">Modifier la tente ✏️</h2>
+            <button
+              onClick={() => !editSaving && setEditing(false)}
+              className="w-8 h-8 rounded-full bg-charcoal/8 flex items-center justify-center text-charcoal/50 hover:bg-charcoal/12 transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className={labelCls}>Capacité (vous inclus)</label>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditCapacity((c) => Math.max(1, c - 1))}
+                  className="w-9 h-9 rounded-full bg-white/80 border border-white text-charcoal/60 font-bold text-lg hover:bg-white transition-colors"
+                >
+                  −
+                </button>
+                <span className="w-8 text-center text-xl font-bold text-charcoal tabular-nums">
+                  {editCapacity}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setEditCapacity((c) => Math.min(10, c + 1))}
+                  className="w-9 h-9 rounded-full bg-white/80 border border-white text-charcoal/60 font-bold text-lg hover:bg-white transition-colors"
+                >
+                  +
+                </button>
+                <span className="text-xs text-charcoal/35 font-medium">personnes</span>
+              </div>
+            </div>
+            <PastelButton
+              variant="lavender"
+              fullWidth
+              disabled={editSaving}
+              onClick={submitEdit}
+            >
+              {editSaving ? "Sauvegarde…" : "Sauvegarder 🌸"}
+            </PastelButton>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
