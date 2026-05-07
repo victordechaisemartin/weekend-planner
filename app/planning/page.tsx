@@ -1,11 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import type { DJ } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import FlowerDivider from "@/components/ui/FlowerDivider";
-import DJCard from "@/components/features/lineup/DJCard";
 
 // ── Schedule data ─────────────────────────────────────────────
 
@@ -46,6 +42,30 @@ const SCHEDULE = [
   },
 ];
 
+// ── DJ data ───────────────────────────────────────────────────
+
+type DJEntry = {
+  id: string;
+  name: string;
+  alias: string;
+  style: string;
+  photo: string | null;
+};
+
+const LINEUP: DJEntry[] = [
+  { id: "djdj",    name: "DJ DJ",    alias: "ou DJ D The Rock J", style: "House Barbuc",          photo: "/djs/djdj.png"    },
+  { id: "djlizot", name: "DJ Lizot", alias: "de Bouc Bel Air",    style: "Jul",                   photo: "/djs/djlizot.png" },
+  { id: "tba1",    name: "???",      alias: "",                    style: "🌸 Reveal coming soon", photo: null               },
+  { id: "tba2",    name: "???",      alias: "",                    style: "🌸 Reveal coming soon", photo: null               },
+];
+
+const CLOUDS = [
+  { top: "10%", duration: "40s", delay: "0s",    width: 180 },
+  { top: "30%", duration: "55s", delay: "-18s",  width: 240 },
+  { top: "62%", duration: "70s", delay: "-35s",  width: 160 },
+  { top: "82%", duration: "45s", delay: "-10s",  width: 200 },
+];
+
 // ── Garland header ────────────────────────────────────────────
 
 function GarlandHeader() {
@@ -53,7 +73,6 @@ function GarlandHeader() {
 
   return (
     <header className="relative bg-gradient-to-b from-pink/25 via-lavender/15 to-cream overflow-hidden pt-10 pb-7">
-      {/* Scattered background flowers */}
       <span className="absolute top-3 left-5 text-3xl opacity-20 -rotate-12 select-none" aria-hidden>🌸</span>
       <span className="absolute top-6 right-6 text-2xl opacity-15 rotate-12 select-none" aria-hidden>🌺</span>
       <span className="absolute bottom-4 left-10 text-xl opacity-15 rotate-6 select-none" aria-hidden>🌼</span>
@@ -61,15 +80,10 @@ function GarlandHeader() {
       <span className="absolute top-1/2 left-2 text-lg opacity-10 select-none" aria-hidden>🌺</span>
       <span className="absolute top-1/2 right-2 text-lg opacity-10 select-none" aria-hidden>🌼</span>
 
-      {/* Top garland */}
-      <p
-        className="text-center text-lg select-none mb-3 tracking-[0.2em]"
-        aria-hidden
-      >
+      <p className="text-center text-lg select-none mb-3 tracking-[0.2em]" aria-hidden>
         {garland.join(" ")}
       </p>
 
-      {/* Title */}
       <div className="px-4 text-center space-y-0.5 relative z-10">
         <p className="text-[10px] font-extrabold uppercase tracking-[0.35em] text-charcoal/40">
           presents
@@ -88,11 +102,7 @@ function GarlandHeader() {
         </p>
       </div>
 
-      {/* Bottom garland */}
-      <p
-        className="text-center text-lg select-none mt-4 tracking-[0.2em]"
-        aria-hidden
-      >
+      <p className="text-center text-lg select-none mt-4 tracking-[0.2em]" aria-hidden>
         {[...garland].reverse().join(" ")}
       </p>
     </header>
@@ -105,18 +115,21 @@ type Tab = "artists" | "planning";
 
 export default function PlanningPage() {
   const [tab, setTab] = useState<Tab>("artists");
-  const [djs, setDjs] = useState<DJ[]>([]);
 
+  // Fade-in observer: cards start hidden via CSS class, revealed when scrolled into view
   useEffect(() => {
-    supabase
-      .from("djs")
-      .select("*")
-      .order("set_time", { ascending: true, nullsFirst: false })
-      .then(({ data }) => setDjs(data ?? []));
-  }, []);
-
-  const revealed = djs.filter((d) => d.revealed);
-  const hidden   = djs.filter((d) => !d.revealed);
+    if (tab !== "artists") return;
+    const cards = document.querySelectorAll(".dj-card");
+    const observer = new IntersectionObserver(
+      (entries) =>
+        entries.forEach((e) => {
+          if (e.isIntersecting) e.target.classList.add("revealed");
+        }),
+      { threshold: 0.1 }
+    );
+    cards.forEach((c) => observer.observe(c));
+    return () => observer.disconnect();
+  }, [tab]);
 
   return (
     <div className="min-h-screen bg-cream">
@@ -143,52 +156,159 @@ export default function PlanningPage() {
         </button>
       </div>
 
-      {/* ── Tab 1: Artists ── */}
+      {/* ── Tab 1: Artists — festival poster ── */}
       {tab === "artists" && (
-        <div className="px-4 pb-10 space-y-6 pt-2">
-          {djs.length === 0 && (
-            <div className="py-16 text-center space-y-2">
-              <p className="text-4xl">🎧</p>
-              <p className="text-sm text-charcoal/40">Planning dropping soon. Stay tuned! 🌸</p>
-            </div>
-          )}
+        <div
+          className="relative overflow-x-hidden scroll-smooth"
+          style={{ background: "#FEFAE8" }}
+        >
+          <style>{`
+            @keyframes drift {
+              0%   { transform: translateX(-300px); }
+              100% { transform: translateX(calc(100vw + 300px)); }
+            }
+            .dj-card {
+              opacity: 0;
+              transform: translateY(1rem);
+              transition: opacity 500ms ease, transform 500ms ease;
+            }
+            .dj-card.revealed {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          `}</style>
 
-          {revealed.length > 0 && (
-            <section className="space-y-3">
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.25em] text-charcoal/35 text-center pt-2">
-                Confirmed artists
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                {revealed.map((dj) => (
-                  <DJCard key={dj.id} dj={dj} />
-                ))}
-              </div>
-            </section>
-          )}
+          {/* Drifting clouds */}
+          {CLOUDS.map((cloud, i) => (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              key={i}
+              src="/cloud.png"
+              alt=""
+              aria-hidden
+              style={{
+                position: "absolute",
+                top: cloud.top,
+                left: 0,
+                width: cloud.width,
+                opacity: 0.6,
+                pointerEvents: "none",
+                animation: `drift ${cloud.duration} linear ${cloud.delay} infinite`,
+              }}
+            />
+          ))}
 
-          {revealed.length > 0 && hidden.length > 0 && (
-            <FlowerDivider />
-          )}
+          {/* DJ cards */}
+          <div className="relative z-10 pb-28 pt-6">
+            {LINEUP.map((dj, i) => {
+              const photoLeft = i % 2 === 0;
 
-          {hidden.length > 0 && (
-            <section className="space-y-3">
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.25em] text-charcoal/35 text-center">
-                🌸 More to be announced
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                {hidden.map((dj) => (
-                  <DJCard key={dj.id} dj={dj} />
-                ))}
-              </div>
-            </section>
-          )}
+              const photoEl = dj.photo ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={dj.photo}
+                  alt={dj.name}
+                  style={{ width: 160, flexShrink: 0, objectFit: "contain" }}
+                />
+              ) : (
+                <div
+                  aria-hidden
+                  style={{
+                    width: 160,
+                    height: 160,
+                    flexShrink: 0,
+                    borderRadius: "50%",
+                    background: "#d1d5db",
+                    filter: "blur(6px)",
+                  }}
+                />
+              );
+
+              const textEl = (
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h2
+                    style={{
+                      fontWeight: 900,
+                      fontSize: "clamp(1.75rem, 9vw, 3rem)",
+                      lineHeight: 1,
+                      letterSpacing: "-0.02em",
+                      textTransform: "uppercase",
+                      color: "#2D2D2D",
+                      wordBreak: "break-word",
+                      margin: 0,
+                    }}
+                  >
+                    {dj.name}
+                  </h2>
+                  {dj.alias && (
+                    <p
+                      style={{
+                        fontSize: "1rem",
+                        color: "rgba(45,45,45,0.6)",
+                        fontStyle: "italic",
+                        marginTop: "0.3rem",
+                        marginBottom: 0,
+                      }}
+                    >
+                      {dj.alias}
+                    </p>
+                  )}
+                  <hr
+                    style={{
+                      margin: "0.75rem 0",
+                      border: "none",
+                      borderTop: "1px solid rgba(45,45,45,0.18)",
+                    }}
+                  />
+                  <p
+                    style={{
+                      fontSize: "0.65rem",
+                      fontWeight: 700,
+                      letterSpacing: "0.2em",
+                      textTransform: "uppercase",
+                      color: "rgba(45,45,45,0.5)",
+                      margin: 0,
+                    }}
+                  >
+                    STYLE : {dj.style}
+                  </p>
+                </div>
+              );
+
+              return (
+                <div key={dj.id}>
+                  <div
+                    className="dj-card"
+                    style={{
+                      display: "flex",
+                      flexDirection: photoLeft ? "row" : "row-reverse",
+                      alignItems: "center",
+                      gap: "1.25rem",
+                      padding: "2rem 1.25rem",
+                    }}
+                  >
+                    {photoEl}
+                    {textEl}
+                  </div>
+                  {i < LINEUP.length - 1 && (
+                    <hr
+                      style={{
+                        margin: "0 2rem",
+                        border: "none",
+                        borderTop: "1px dashed rgba(45,45,45,0.15)",
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
       {/* ── Tab 2: Planning ── */}
       {tab === "planning" && (
         <div className="relative px-3 pb-10 pt-3">
-          {/* Scattered flower decorations */}
           <span className="absolute top-4 left-2 text-2xl opacity-10 select-none -rotate-12" aria-hidden>🌸</span>
           <span className="absolute top-8 right-2 text-xl opacity-10 select-none rotate-12" aria-hidden>🌺</span>
           <span className="absolute bottom-20 left-1 text-2xl opacity-10 select-none rotate-6" aria-hidden>🌼</span>
@@ -197,15 +317,12 @@ export default function PlanningPage() {
           <div className="grid grid-cols-3 gap-2.5">
             {SCHEDULE.map(({ day, badge, slots }) => (
               <div key={day} className="flex flex-col">
-                {/* Day header */}
                 <div className="flex items-baseline gap-1 mb-2">
                   <span className="text-3xl font-black text-pink leading-none">{day}</span>
                   <span className="text-[9px] font-extrabold uppercase tracking-wider bg-pink text-white rounded-full px-1.5 py-0.5">
                     {badge}
                   </span>
                 </div>
-
-                {/* Pink card */}
                 <div className="flex-1 bg-pink rounded-2xl p-2 space-y-1.5">
                   {slots.map((slot) => (
                     <div key={slot.time} className="bg-white rounded-xl px-2 py-2">
