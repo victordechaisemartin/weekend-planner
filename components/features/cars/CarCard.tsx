@@ -18,6 +18,7 @@ type Props = {
   currentUserId: string | null;
   onJoin: (carId: string) => void;
   onLeave: (carId: string) => void;
+  onRemovePassenger: (carId: string, passengerId: string) => void;
   onEdit: (carId: string, form: { address: string; date: string; time: string; seats: number }) => Promise<void>;
   onDelete: (carId: string) => Promise<void>;
   busy: boolean;
@@ -39,7 +40,7 @@ function formatDeparture(iso: string) {
   });
 }
 
-export default function CarCard({ car, currentUserId, onJoin, onLeave, onEdit, onDelete, busy }: Props) {
+export default function CarCard({ car, currentUserId, onJoin, onLeave, onRemovePassenger, onEdit, onDelete, busy }: Props) {
   const freeSeats = car.seats_total - car.passengers.length;
   const isFull = freeSeats <= 0;
   const isDriver = car.driver.id === currentUserId;
@@ -136,35 +137,38 @@ export default function CarCard({ car, currentUserId, onJoin, onLeave, onEdit, o
             <span>{formatDeparture(car.departure_datetime)}</span>
           </p>
 
-          {/* ── Seat grid ── */}
-          <div className="flex flex-wrap gap-2 pt-1">
+          {/* ── Passenger list ── */}
+          <div className="space-y-0.5 pt-1">
             {car.passengers.map((p) => (
-              <div
-                key={p.id}
-                title={p.name}
-                className="w-9 h-9 rounded-xl bg-pink/20 flex items-center justify-center text-base select-none"
-              >
-                🌸
+              <div key={p.id} className="flex items-center justify-between py-1">
+                <div className="flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-full bg-pink/20 flex items-center justify-center text-sm select-none">
+                    🌸
+                  </span>
+                  <span className="text-sm text-charcoal">{p.name}</span>
+                </div>
+                {isDriver && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!window.confirm(`Retirer ${p.name} de ta voiture ?`)) return;
+                      onRemovePassenger(car.id, p.id);
+                    }}
+                    className="text-charcoal/30 hover:text-pink text-xs transition-colors"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
             ))}
-            {!isFull && !isDriver && !isPassenger &&
-              Array.from({ length: freeSeats }).map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => onJoin(car.id)}
-                  disabled={busy || !currentUserId}
-                  aria-label="Reserve a seat"
-                  className={cn(
-                    "w-9 h-9 rounded-xl border-2 border-dashed flex items-center justify-center",
-                    "text-lg font-light transition-all duration-150",
-                    !currentUserId
-                      ? "border-charcoal/10 text-charcoal/15 cursor-default"
-                      : "border-charcoal/20 text-charcoal/35 hover:border-pink/60 hover:text-pink hover:bg-pink/5 hover:scale-105 active:scale-95 cursor-pointer"
-                  )}
-                >
+            {Array.from({ length: Math.max(0, freeSeats) }).map((_, i) => (
+              <div key={i} className="flex items-center gap-2 py-1 opacity-40">
+                <span className="w-8 h-8 rounded-full border-2 border-dashed border-charcoal/20 flex items-center justify-center text-sm text-charcoal/40">
                   +
-                </button>
-              ))}
+                </span>
+                <span className="text-sm text-charcoal/40">Place disponible</span>
+              </div>
+            ))}
           </div>
 
           {/* ── Action row ── */}

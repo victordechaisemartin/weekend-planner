@@ -131,6 +131,15 @@ export default function CarsClient() {
     setBusy(false);
   }
 
+  async function handleRemovePassenger(carId: string, passengerId: string) {
+    await supabase
+      .from("car_passengers")
+      .delete()
+      .eq("car_id", carId)
+      .eq("user_id", passengerId);
+    await refresh();
+  }
+
   async function handleEdit(carId: string, form: { address: string; date: string; time: string; seats: number }) {
     const car = cars.find((c) => c.id === carId);
     const departure_datetime = new Date(`${form.date}T${form.time}:00`).toISOString();
@@ -273,6 +282,7 @@ export default function CarsClient() {
               currentUserId={currentUserId}
               onJoin={handleJoin}
               onLeave={handleLeave}
+              onRemovePassenger={handleRemovePassenger}
               onEdit={handleEdit}
               onDelete={handleDelete}
               busy={busy}
