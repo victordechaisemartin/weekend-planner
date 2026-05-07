@@ -1,23 +1,77 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getEventId } from "@/lib/constants";
 import type { Announcement } from "@/lib/types";
 import PageHeader from "@/components/ui/PageHeader";
 import FlowerDivider from "@/components/ui/FlowerDivider";
 import CountdownBanner from "@/components/features/announcements/CountdownBanner";
 import AnnouncementCard from "@/components/features/announcements/AnnouncementCard";
 
-export const revalidate = 60;
+export default function AnnouncementsPage() {
+  const [announcements,    setAnnouncements]    = useState<Announcement[]>([]);
+  const [participantCount, setParticipantCount] = useState<number | null>(null);
+  const [carsCount,        setCarsCount]        = useState<number | null>(null);
+  const [freeSeats,        setFreeSeats]        = useState<number | null>(null);
 
-export default async function AnnouncementsPage() {
-  const { data } = await supabase
-    .from("announcements")
-    .select("*")
-    .order("pinned",     { ascending: false })
-    .order("created_at", { ascending: false });
+  // Fetch announcements once on mount
+  useEffect(() => {
+    supabase
+      .from("announcements")
+      .select("*")
+      .order("pinned",     { ascending: false })
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        setAnnouncements(
+          (data ?? []).map((a) => ({ ...a, reactions: a.reactions ?? {} }))
+        );
+      });
+  }, []);
 
-  const announcements: Announcement[] = (data ?? []).map((a) => ({
-    ...a,
-    reactions: a.reactions ?? {},
-  }));
+  // Fetch live stats + subscribe to Realtime updates
+  useEffect(() => {
+    async function fetchStats() {
+      const [{ count: userCount }, eventId] = await Promise.all([
+        supabase.from("users").select("*", { count: "exact", head: true }),
+        getEventId(),
+      ]);
+      setParticipantCount(userCount ?? 0);
+
+      if (eventId) {
+        const { data: cars } = await supabase
+          .from("cars").select("id, seats_total").eq("event_id", eventId);
+        const carIds = (cars ?? []).map((c) => c.id);
+        const { count: passengerCount } = carIds.length
+          ? await supabase
+              .from("car_passengers")
+              .select("*", { count: "exact", head: true })
+              .in("car_id", carIds)
+          : { count: 0 };
+        const totalSeats = (cars ?? []).reduce((s, c) => s + c.seats_total, 0);
+        setCarsCount((cars ?? []).length);
+        setFreeSeats(Math.max(0, totalSeats - (passengerCount ?? 0)));
+      }
+    }
+
+    fetchStats();
+
+    const channel = supabase
+      .channel("live-stats")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "users" },
+        () => fetchStats()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "cars" },
+        () => fetchStats()
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const pinned = announcements.filter((a) => a.pinned);
   const feed   = announcements.filter((a) => !a.pinned);
@@ -28,6 +82,31 @@ export default async function AnnouncementsPage() {
 
       <div className="px-4 pb-10 space-y-4">
         <CountdownBanner />
+
+        {/* ── Live stats ── */}
+        <div className="flex gap-3">
+          <div className="flex-1 bg-white rounded-3xl p-4 text-center shadow-sm">
+            <p className="text-3xl font-black text-charcoal tabular-nums">
+              {participantCount ?? "—"}
+            </p>
+            <p className="text-[10px] font-extrabold uppercase tracking-widest text-charcoal/35 mt-1">
+              Participants 🌸
+            </p>
+          </div>
+          <div className="flex-1 bg-white rounded-3xl p-4 text-center shadow-sm">
+            <p className="text-3xl font-black text-charcoal tabular-nums">
+              {carsCount ?? "—"}
+            </p>
+            {freeSeats !== null && (
+              <p className="text-[11px] font-semibold text-charcoal/40 leading-none mt-0.5">
+                ({freeSeats} places libres)
+              </p>
+            )}
+            <p className="text-[10px] font-extrabold uppercase tracking-widest text-charcoal/35 mt-1">
+              Voitures
+            </p>
+          </div>
+        </div>
 
         {pinned.map((a) => (
           <AnnouncementCard key={a.id} announcement={a} variant="pinned" />
