@@ -55,8 +55,12 @@ type DJEntry = {
 const LINEUP: DJEntry[] = [
   { id: "djdj",    name: "DJ DJ",    alias: "ou DJ D The Rock J", style: "House Barbuc",          photo: "/djs/djdj.png"    },
   { id: "djlizot", name: "DJ Lizot", alias: "de Bouc Bel Air",    style: "Jul",                   photo: "/djs/djlizot.png" },
+  { id: "djboss",  name: "DJ Boss",  alias: "Ami de Chloé",       style: "Musique de Dauphin(e)", photo: "/djs/djboss.png"  },
   { id: "tba1",    name: "???",      alias: "",                    style: "🌸 Reveal coming soon", photo: null               },
+  { id: "djis",    name: "DJ Maïs",  alias: "ou juste DJ ïs",     style: "White Girl Music",      photo: "/djs/djis.png"    },
   { id: "tba2",    name: "???",      alias: "",                    style: "🌸 Reveal coming soon", photo: null               },
+  { id: "tba3",    name: "???",      alias: "",                    style: "🌸 Reveal coming soon", photo: null               },
+  { id: "tba4",    name: "???",      alias: "",                    style: "🌸 Reveal coming soon", photo: null               },
 ];
 
 const CLOUDS = [
