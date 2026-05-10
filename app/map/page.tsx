@@ -3,7 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import PageHeader from "@/components/ui/PageHeader";
-import FestivalIllustrationMap from "@/components/features/map/FestivalIllustrationMap";
+import FestivalSVGMap from "@/components/features/map/FestivalSVGMap";
 
 // ── dynamic imports (Leaflet requires ssr:false) ──────────────
 
@@ -60,11 +60,36 @@ export default function MapPage() {
         </div>
       </div>
 
-      <div className="flex-1 px-4 pb-20 min-h-0">
-        <div className="h-full rounded-3xl overflow-hidden shadow-[0_2px_20px_0_rgba(45,45,45,0.1)]">
-          {tab === "travel" ? <MapClient /> : <FestivalIllustrationMap />}
+      {/* ── Map area ── */}
+      {tab === "travel" ? (
+        <div className="flex-1 px-4 pb-20 min-h-0">
+          <div className="h-full rounded-3xl overflow-hidden shadow-[0_2px_20px_0_rgba(45,45,45,0.1)]">
+            <MapClient />
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex-1 px-4 pb-20 min-h-0 flex flex-col gap-2">
+          {/* Map — rounded container keeps clipping clean */}
+          <div className="flex-1 rounded-3xl overflow-hidden shadow-[0_2px_20px_0_rgba(45,45,45,0.1)] min-h-0">
+            <FestivalSVGMap />
+          </div>
+
+          {/* Download button — outside the clipping container */}
+          <div className="text-center shrink-0">
+            <button
+              onClick={() => {
+                const a = document.createElement("a");
+                a.href = "/map-lola.svg";
+                a.download = "lolapabouillet-map.svg";
+                a.click();
+              }}
+              className="text-xs text-charcoal/40 underline underline-offset-2"
+            >
+              📥 Télécharger la carte
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
