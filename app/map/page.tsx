@@ -3,23 +3,12 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import PageHeader from "@/components/ui/PageHeader";
+import FestivalIllustrationMap from "@/components/features/map/FestivalIllustrationMap";
 
 // ── dynamic imports (Leaflet requires ssr:false) ──────────────
 
 const MapClient = dynamic(
   () => import("@/components/features/map/MapClient"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex-1 flex items-center justify-center">
-        <span className="animate-pulse text-4xl">🌸</span>
-      </div>
-    ),
-  }
-);
-
-const FestivalMapClient = dynamic(
-  () => import("@/components/features/map/FestivalMapClient"),
   {
     ssr: false,
     loading: () => (
@@ -73,7 +62,7 @@ export default function MapPage() {
 
       <div className="flex-1 px-4 pb-20 min-h-0">
         <div className="h-full rounded-3xl overflow-hidden shadow-[0_2px_20px_0_rgba(45,45,45,0.1)]">
-          {tab === "travel" ? <MapClient /> : <FestivalMapClient />}
+          {tab === "travel" ? <MapClient /> : <FestivalIllustrationMap />}
         </div>
       </div>
     </div>
