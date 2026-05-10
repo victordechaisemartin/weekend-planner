@@ -79,8 +79,8 @@ export default function MapPage() {
             <button
               onClick={() => {
                 const a = document.createElement("a");
-                a.href = "/map-lola.svg";
-                a.download = "lolapabouillet-map.svg";
+                a.href = "/map-lola.png";
+                a.download = "lolapabouillet-map.png";
                 a.click();
               }}
               className="text-xs text-charcoal/40 underline underline-offset-2"

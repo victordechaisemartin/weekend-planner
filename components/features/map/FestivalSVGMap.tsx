@@ -3,6 +3,15 @@
 import { useState } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
+// ── ping animation ────────────────────────────────────────────
+
+const pingKeyframes = `
+  @keyframes ping {
+    0%   { transform: scale(1);   opacity: 0.6; }
+    100% { transform: scale(1.8); opacity: 0;   }
+  }
+`;
+
 // ── geo bounds ────────────────────────────────────────────────
 
 const W_MIN   = 1.6875;
@@ -17,32 +26,117 @@ function toPercent(lat: number, lng: number) {
   };
 }
 
-// ── pins ──────────────────────────────────────────────────────
+// ── types & data ──────────────────────────────────────────────
 
-type Pin = { lat: number; lng: number; emoji: string; name: string; color: string };
+type Pin = {
+  lat:        number;
+  lng:        number;
+  icon:       string | null;
+  emoji?:     string;
+  name:       string;
+  labelColor: string;
+};
 
 const PINS: Pin[] = [
-  { lat: 48.68918, lng: 1.69503, emoji: "🏠", name: "Maison d'Yves",  color: "#F4A7B9" },
-  { lat: 48.68845, lng: 1.69600, emoji: "🚢", name: "Maison Titanic", color: "#C9B8E8" },
-  { lat: 48.68866, lng: 1.69520, emoji: "🎣", name: "Rambouboat",     color: "#7EC8E3" },
-  { lat: 48.68967, lng: 1.70323, emoji: "🪵", name: "Grange",         color: "#D4A574" },
-  { lat: 48.68905, lng: 1.70455, emoji: "🎾", name: "Tennis",         color: "#8FBC5A" },
-  { lat: 48.69028, lng: 1.70499, emoji: "🔴", name: "Maison Rouge",   color: "#FF6B6B" },
-  { lat: 48.68966, lng: 1.70424, emoji: "🏝️", name: "Étang 2 îlots", color: "#7EC8E3" },
-  { lat: 48.69153, lng: 1.69923, emoji: "🛖", name: "Cabane",         color: "#D4A574" },
-  { lat: 48.68881, lng: 1.69681, emoji: "⛺", name: "Camping",        color: "#8FBC5A" },
-  { lat: 48.68873, lng: 1.69599, emoji: "🎧", name: "Yves Stage",     color: "#F4A7B9" },
-  { lat: 48.69126, lng: 1.69098, emoji: "🌸", name: "Entrée 1",       color: "#F4A7B9" },
-  { lat: 48.69156, lng: 1.70608, emoji: "🌸", name: "Entrée 2",       color: "#F4A7B9" },
+  { lat: 48.68918, lng: 1.69503, icon: "/icons/house.png",     name: "Maison d'Yves",  labelColor: "#F4A7B9" },
+  { lat: 48.68845, lng: 1.69600, icon: "/icons/house.png",     name: "Maison Titanic", labelColor: "#C9B8E8" },
+  { lat: 48.68866, lng: 1.69520, icon: null, emoji: "🎣",      name: "Rambouboat",     labelColor: "#7EC8E3" },
+  { lat: 48.68967, lng: 1.70323, icon: "/icons/barn.png",      name: "Grange",         labelColor: "#D4A574" },
+  { lat: 48.68905, lng: 1.70455, icon: "/icons/tennis.png",    name: "Tennis",         labelColor: "#8FBC5A" },
+  { lat: 48.69028, lng: 1.70499, icon: "/icons/house.png",     name: "Maison Rouge",   labelColor: "#FF6B6B" },
+  { lat: 48.68966, lng: 1.70424, icon: null, emoji: "🏝️",     name: "Étang 2 îlots",  labelColor: "#7EC8E3" },
+  { lat: 48.69153, lng: 1.69923, icon: "/icons/treehouse.png", name: "Cabane",         labelColor: "#D4A574" },
+  { lat: 48.68881, lng: 1.69681, icon: "/icons/tent.png",      name: "Camping",        labelColor: "#8FBC5A" },
+  { lat: 48.68873, lng: 1.69599, icon: "/icons/stage.png",     name: "Yves Stage",     labelColor: "#F4A7B9" },
+  { lat: 48.69126, lng: 1.69098, icon: null, emoji: "🌸",      name: "Entrée 1",       labelColor: "#F4A7B9" },
+  { lat: 48.69156, lng: 1.70608, icon: null, emoji: "🌸",      name: "Entrée 2",       labelColor: "#F4A7B9" },
 ];
 
-// ── component ─────────────────────────────────────────────────
+// ── MapPin ────────────────────────────────────────────────────
+
+function MapPin({ pin, scale }: { pin: Pin; scale: number }) {
+  const { x, y } = toPercent(pin.lat, pin.lng);
+  const isStage  = pin.name === "Yves Stage";
+
+  return (
+    <div
+      style={{
+        position:        "absolute",
+        left:            `${x}%`,
+        top:             `${y}%`,
+        transform:       `translate(-50%, -100%) scale(${1 / scale})`,
+        transformOrigin: "bottom center",
+        cursor:          "pointer",
+        zIndex:          10,
+      }}
+    >
+      {/* Pulsing ring — Yves Stage only */}
+      {isStage && (
+        <div style={{
+          position:     "absolute",
+          top:          -4,
+          left:         -4,
+          right:        -4,
+          bottom:       -4,
+          borderRadius: "50%",
+          border:       "2px solid #F4A7B9",
+          animation:    "ping 2s infinite",
+          opacity:      0.6,
+          pointerEvents:"none",
+        }} />
+      )}
+
+      {/* Icon or emoji */}
+      <div style={{
+        width:          36,
+        height:         36,
+        display:        "flex",
+        alignItems:     "center",
+        justifyContent: "center",
+        filter:         "drop-shadow(0 2px 4px rgba(0,0,0,0.4))",
+      }}>
+        {pin.icon ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={pin.icon}
+            alt={pin.name}
+            style={{ width: 36, height: 36, objectFit: "contain" }}
+            draggable={false}
+          />
+        ) : (
+          <span style={{ fontSize: 28, lineHeight: 1 }}>{pin.emoji}</span>
+        )}
+      </div>
+
+      {/* Label — always visible */}
+      <div style={{
+        marginTop:  2,
+        background: pin.labelColor,
+        color:      "white",
+        fontSize:   9,
+        fontWeight: 700,
+        padding:    "2px 6px",
+        borderRadius: 99,
+        whiteSpace: "nowrap",
+        textAlign:  "center",
+        boxShadow:  "0 1px 3px rgba(0,0,0,0.3)",
+        textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+      }}>
+        {pin.name}
+      </div>
+    </div>
+  );
+}
+
+// ── FestivalSVGMap ────────────────────────────────────────────
 
 export default function FestivalSVGMap() {
-  const [activePin, setActivePin] = useState<string | null>(null);
+  const [currentScale, setCurrentScale] = useState(1);
 
   return (
     <div className="relative w-full h-full bg-[#FFF8F0]">
+      <style>{pingKeyframes}</style>
+
       <TransformWrapper
         initialScale={1}
         minScale={0.8}
@@ -51,6 +145,7 @@ export default function FestivalSVGMap() {
         wheel={{ disabled: false }}
         pinch={{ disabled: false }}
         doubleClick={{ disabled: false }}
+        onTransformed={(_, state) => setCurrentScale(state.scale)}
       >
         {({ zoomIn, zoomOut, resetTransform }) => (
           <>
@@ -61,81 +156,20 @@ export default function FestivalSVGMap() {
               <div style={{ position: "relative", width: "100%", height: "100%" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/map-lola.svg"
+                  src="/map-lola.png"
                   alt="Festival Map"
                   style={{ width: "100%", height: "auto", display: "block" }}
                   draggable={false}
                 />
 
-                {/* ── Pins overlay ── */}
-                {PINS.map((pin) => {
-                  const { x, y } = toPercent(pin.lat, pin.lng);
-                  const isStage  = pin.name === "Yves Stage";
-                  const isActive = activePin === pin.name;
-
-                  return (
-                    <div
-                      key={pin.name}
-                      style={{
-                        position:  "absolute",
-                        left:      `${x}%`,
-                        top:       `${y}%`,
-                        transform: "translate(-50%, -100%)",
-                        zIndex:    10,
-                        cursor:    "pointer",
-                      }}
-                      onClick={() => setActivePin(isActive ? null : pin.name)}
-                    >
-                      {/* Pulsing ring for main stage */}
-                      {isStage && (
-                        <div
-                          className="animate-ping absolute inset-0 rounded-full bg-pink/40"
-                          style={{ width: 32, height: 32 }}
-                        />
-                      )}
-
-                      {/* Pin circle */}
-                      <div style={{
-                        width:          32,
-                        height:         32,
-                        borderRadius:   "50%",
-                        background:     pin.color,
-                        display:        "flex",
-                        alignItems:     "center",
-                        justifyContent: "center",
-                        fontSize:       16,
-                        boxShadow:      "0 2px 6px rgba(0,0,0,0.3)",
-                        border:         "2px solid white",
-                        position:       "relative",
-                      }}>
-                        {pin.emoji}
-                      </div>
-
-                      {/* Tooltip on tap */}
-                      {isActive && (
-                        <div style={{
-                          position:   "absolute",
-                          bottom:     "110%",
-                          left:       "50%",
-                          transform:  "translateX(-50%)",
-                          background: "rgba(0,0,0,0.75)",
-                          color:      "white",
-                          padding:    "3px 8px",
-                          borderRadius: 99,
-                          fontSize:   11,
-                          fontWeight: 600,
-                          whiteSpace: "nowrap",
-                        }}>
-                          {pin.name}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                {/* Pins — scale-invariant via inverse transform */}
+                {PINS.map((pin) => (
+                  <MapPin key={pin.name} pin={pin} scale={currentScale} />
+                ))}
               </div>
             </TransformComponent>
 
-            {/* ── Zoom controls ── */}
+            {/* Zoom controls */}
             <div className="absolute bottom-4 right-4 flex flex-col gap-2 z-10">
               <button
                 onClick={() => zoomIn()}
