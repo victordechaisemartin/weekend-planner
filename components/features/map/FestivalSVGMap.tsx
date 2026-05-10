@@ -145,7 +145,7 @@ export default function FestivalSVGMap() {
         wheel={{ disabled: false }}
         pinch={{ disabled: false }}
         doubleClick={{ disabled: false }}
-        onTransformed={(_, state) => setCurrentScale(state.scale)}
+        onTransform={(_, state) => setCurrentScale(state.scale)}
       >
         {({ zoomIn, zoomOut, resetTransform }) => (
           <>
