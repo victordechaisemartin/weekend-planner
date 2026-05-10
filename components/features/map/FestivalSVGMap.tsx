@@ -42,7 +42,7 @@ const PINS: Pin[] = [
   { lat: 48.68845, lng: 1.69600, icon: "/icons/house.png",     name: "Maison Titanic", labelColor: "#C9B8E8" },
   { lat: 48.68866, lng: 1.69520, icon: null, emoji: "🎣",      name: "Rambouboat",     labelColor: "#7EC8E3" },
   { lat: 48.68967, lng: 1.70323, icon: "/icons/barn.png",      name: "Grange",         labelColor: "#D4A574" },
-  { lat: 48.68905, lng: 1.70455, icon: "/icons/tennis.png",    name: "Tennis",         labelColor: "#8FBC5A" },
+  { lat: 48.68905, lng: 1.70455, icon: "/icons/tennis-court.png",    name: "Tennis",         labelColor: "#8FBC5A" },
   { lat: 48.69028, lng: 1.70499, icon: "/icons/house.png",     name: "Maison Rouge",   labelColor: "#FF6B6B" },
   { lat: 48.68966, lng: 1.70424, icon: null, emoji: "🏝️",     name: "Étang 2 îlots",  labelColor: "#7EC8E3" },
   { lat: 48.69153, lng: 1.69923, icon: "/icons/treehouse.png", name: "Cabane",         labelColor: "#D4A574" },
