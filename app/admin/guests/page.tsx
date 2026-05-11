@@ -313,12 +313,8 @@ function GuestCard({ guest: g }: { guest: GuestRow }) {
     >
       {/* Name */}
       <p
-        className="text-base uppercase leading-tight"
-        style={{
-          fontFamily: "'Lilita One', cursive",
-          color: "#2D2D2D",
-          WebkitTextStroke: "0.5px #2D2D2D",
-        }}
+        className="font-[family-name:var(--font-lilita)] text-base uppercase leading-tight"
+        style={{ color: "#2D2D2D", WebkitTextStroke: "0.5px #2D2D2D" }}
       >
         {g.name}
       </p>

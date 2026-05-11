@@ -44,8 +44,8 @@ export default function AdminLayout({
         </span>
         <Link
           href="/announcements"
-          className="text-xs underline"
-          style={{ color: "#2D2D2D" }}
+          className="text-xs font-semibold rounded-full px-3 py-1.5 transition-colors active:scale-95"
+          style={{ background: "#F4A7B9", color: "#2D2D2D" }}
         >
           ← Retour à l&apos;app
         </Link>

@@ -99,11 +99,8 @@ export default function DashboardPage() {
       {/* ── Header ── */}
       <div>
         <h1
-          className="text-3xl uppercase text-white leading-tight"
-          style={{
-            fontFamily: "'Lilita One', cursive",
-            WebkitTextStroke: "2px #2D2D2D",
-          }}
+          className="font-[family-name:var(--font-lilita)] text-3xl uppercase text-white leading-tight"
+          style={{ WebkitTextStroke: "2px #2D2D2D" }}
         >
           Bonjour {firstName} 🌸
         </h1>
