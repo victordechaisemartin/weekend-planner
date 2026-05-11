@@ -24,19 +24,19 @@ type Pin = {
 };
 
 const PINS: Pin[] = [
-  { name: "Entrée 1",      xPct: 18, yPct: 38, icon: null,                      emoji: "🌸", labelColor: "#F4A7B9" },
-  { name: "Entrée 2",      xPct: 96, yPct: 35, icon: null,                      emoji: "🌸", labelColor: "#F4A7B9" },
-  { name: "Maison d'Yves", xPct: 28, yPct: 62, icon: null,                      emoji: "🏠", labelColor: "#C9B8E8" },
-  { name: "Maison Titanic",xPct: 38, yPct: 72, icon: null,                      emoji: "🏠", labelColor: "#C9B8E8" },
-  { name: "Yves Stage",    xPct: 38, yPct: 55, icon: null,                      emoji: "🎤", labelColor: "#F4A7B9" },
-  { name: "Camping",       xPct: 48, yPct: 70, icon: null,                      emoji: "⛺", labelColor: "#8FBC5A" },
-  { name: "Grange",        xPct: 72, yPct: 65, icon: null,                      emoji: "🚜", labelColor: "#C9B8E8" },
-  { name: "Maison Rouge",  xPct: 85, yPct: 40, icon: null,                      emoji: "🏠", labelColor: "#FF6B6B" },
+  { name: "Entrée 1",      xPct: 18, yPct: 35, icon: null,                      emoji: "🌸", labelColor: "#F4A7B9" },
+  { name: "Entrée 2",      xPct: 96, yPct: 48, icon: null,                      emoji: "🌸", labelColor: "#F4A7B9" },
+  { name: "Maison d'Yves", xPct: 33, yPct: 62, icon: null,                      emoji: "🏠", labelColor: "#C9B8E8" },
+  { name: "Maison Titanic",xPct: 42, yPct: 75, icon: null,                      emoji: "🏠", labelColor: "#C9B8E8" },
+  { name: "Yves Stage",    xPct: 40, yPct: 65, icon: null,                      emoji: "🎤", labelColor: "#F4A7B9" },
+  { name: "Camping",       xPct: 48, yPct: 75, icon: null,                      emoji: "⛺", labelColor: "#8FBC5A" },
+  { name: "Grange",        xPct: 80, yPct: 70, icon: null,                      emoji: "🚜", labelColor: "#C9B8E8" },
+  { name: "Maison Rouge",  xPct: 88, yPct: 59, icon: null,                      emoji: "🏠", labelColor: "#FF6B6B" },
   { name: "Cabane",        xPct: 80, yPct: 65, icon: null,                      emoji: "🛖", labelColor: "#D4A574" },
-  { name: "Étang 2 îlots", xPct: 82, yPct: 62, icon: null,                      emoji: "🐟", labelColor: "#7EC8E3" },
+  { name: "Étang 2 îlots", xPct: 82, yPct: 68, icon: null,                      emoji: "🐟", labelColor: "#7EC8E3" },
   { name: "Tennis",        xPct: 80, yPct: 84, icon: null,                      emoji: "🎾", labelColor: "#8FBC5A" },
-  { name: "Cabane",        xPct: 65, yPct: 38, icon: null,                      emoji: "🛖", labelColor: "#D4A574" },
-  { name: "Davy Jones",    xPct: 30, yPct: 65, icon: null,                      emoji: "🐟", labelColor: "#7EC8E3" },
+  { name: "Cabane",        xPct: 67, yPct: 40, icon: null,                      emoji: "🛖", labelColor: "#D4A574" },
+  { name: "Davy Jones",    xPct: 37, yPct: 70, icon: null,                      emoji: "🐟", labelColor: "#7EC8E3" },
 ];
 
 // ── MapPin ────────────────────────────────────────────────────
