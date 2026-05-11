@@ -26,16 +26,16 @@ type Pin = {
 const PINS: Pin[] = [
   { name: "Entrée 1",      xPct:  7, yPct: 30, emoji: "🌸",                   labelColor: "#F4A7B9" },
   { name: "Entrée 2",      xPct: 90, yPct: 36, emoji: "🌸",                   labelColor: "#F4A7B9" },
-  { name: "Maison d'Yves", xPct: 20, yPct: 52, icon: "/icons/house.png",      labelColor: "#F4A7B9" },
-  { name: "Maison Titanic",xPct: 23, yPct: 65, icon: "/icons/house.png",      labelColor: "#C9B8E8" },
-  { name: "Yves Stage",    xPct: 30, yPct: 57, icon: "/icons/stage.png",      labelColor: "#F4A7B9" },
+  { name: "Maison d'Yves", xPct: 20, yPct: 52, icon: "🏠",                    labelColor: "#F4A7B9" },
+  { name: "Maison Titanic",xPct: 23, yPct: 65, icon: "🏠",                    labelColor: "#C9B8E8" },
+  { name: "Yves Stage",    xPct: 30, yPct: 57, icon: "🎤",                    labelColor: "#F4A7B9" },
   { name: "Camping",       xPct: 40, yPct: 58, emoji: "⛺",                   labelColor: "#8FBC5A" },
-  { name: "Grange",        xPct: 65, yPct: 56, icon: "/icons/barn.png",       labelColor: "#D4A574" },
-  { name: "Maison Rouge",  xPct: 80, yPct: 44, icon: "/icons/house.png",      labelColor: "#FF6B6B" },
-  { name: "Étang 2 îlots", xPct: 82, yPct: 57, emoji: "🏝️",                  labelColor: "#7EC8E3" },
-  { name: "Tennis",        xPct: 83, yPct: 68, icon: "/icons/tennis.png",     labelColor: "#8FBC5A" },
-  { name: "Cabane",        xPct: 54, yPct: 25, icon: "/icons/treehouse.png",  labelColor: "#D4A574" },
-  { name: "Rambouboat",    xPct: 18, yPct: 58, emoji: "🎣",                   labelColor: "#7EC8E3" },
+  { name: "Grange",        xPct: 65, yPct: 56, icon: "🌾",                    labelColor: "#D4A574" },
+  { name: "Maison Rouge",  xPct: 80, yPct: 44, icon: "🏠",                    labelColor: "#FF6B6B" },
+  { name: "Étang 2 îlots", xPct: 82, yPct: 57, emoji: "🐟",                   labelColor: "#7EC8E3" },
+  { name: "Tennis",        xPct: 83, yPct: 68, icon: "🎾",                    labelColor: "#8FBC5A" },
+  { name: "Cabane",        xPct: 54, yPct: 25, icon: "🛖",                    labelColor: "#D4A574" },
+  { name: "Rambouboat",    xPct: 18, yPct: 58, emoji: "🐟",                   labelColor: "#7EC8E3" },
 ];
 
 // ── MapPin ────────────────────────────────────────────────────
