@@ -24,18 +24,18 @@ type Pin = {
 };
 
 const PINS: Pin[] = [
-  { name: "Entrée 1",      xPct: 15, yPct: 20, emoji: "🌸",                   labelColor: "#F4A7B9" },
-  { name: "Entrée 2",      xPct: 94, yPct: 36, emoji: "🌸",                   labelColor: "#F4A7B9" },
-  { name: "Maison d'Yves", xPct: 27, yPct: 45, emoji: "🏠",                   labelColor: "#F4A7B9" },
+  { name: "Entrée 1",      xPct: 15, yPct: 22, emoji: "🌸",                   labelColor: "#F4A7B9" },
+  { name: "Entrée 2",      xPct: 96, yPct: 36, emoji: "🌸",                   labelColor: "#F4A7B9" },
+  { name: "Maison d'Yves", xPct: 27, yPct: 40, emoji: "🏠",                   labelColor: "#F4A7B9" },
   { name: "Maison Titanic",xPct: 38, yPct: 57, emoji: "🏠",                   labelColor: "#C9B8E8" },
-  { name: "Yves Stage",    xPct: 35, yPct: 49, emoji: "🎤",                   labelColor: "#F4A7B9" },
+  { name: "Yves Stage",    xPct: 38, yPct: 49, emoji: "🎤",                   labelColor: "#F4A7B9" },
   { name: "Camping",       xPct: 45, yPct: 50, emoji: "⛺",                   labelColor: "#8FBC5A" },
-  { name: "Grange",        xPct: 72, yPct: 5, emoji: "🌾",                   labelColor: "#D4A574" },
+  { name: "Grange",        xPct: 72, yPct: 50, emoji: "🌾",                   labelColor: "#D4A574" },
   { name: "Maison Rouge",  xPct: 87, yPct: 44, emoji: "🏠",                   labelColor: "#FF6B6B" },
   { name: "Étang 2 îlots", xPct: 82, yPct: 50, emoji: "🐟",                   labelColor: "#7EC8E3" },
   { name: "Tennis",        xPct: 81, yPct: 60, emoji: "🎾",                   labelColor: "#8FBC5A" },
-  { name: "Cabane",        xPct: 62, yPct: 25, emoji: "🛖",                   labelColor: "#D4A574" },
-  { name: "Rambouboat",    xPct: 30, yPct: 50, emoji: "🐟",                   labelColor: "#7EC8E3" },
+  { name: "Cabane",        xPct: 65, yPct: 27, emoji: "🛖",                   labelColor: "#D4A574" },
+  { name: "Rambouboat",    xPct: 32, yPct: 45, emoji: "🐟",                   labelColor: "#7EC8E3" },
 ];
 
 // ── MapPin ────────────────────────────────────────────────────
