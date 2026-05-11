@@ -38,7 +38,7 @@ type Pin = {
 };
 
 const PINS: Pin[] = [
-  { lat: 48.68918, lng: 1.69503, icon: "/icons/house.png",     name: "Maison d'Yves",  labelColor: "#F4A7B9" },
+  { lat: 48.68966, lng: 1.69303, icon: "/icons/house.png",     name: "Maison d'Yves",  labelColor: "#F4A7B9" },
   { lat: 48.68845, lng: 1.69600, icon: "/icons/house.png",     name: "Maison Titanic", labelColor: "#C9B8E8" },
   { lat: 48.68866, lng: 1.69520, icon: null, emoji: "🎣",      name: "Rambouboat",     labelColor: "#7EC8E3" },
   { lat: 48.68967, lng: 1.70323, icon: "/icons/barn.png",      name: "Grange",         labelColor: "#D4A574" },
@@ -49,7 +49,7 @@ const PINS: Pin[] = [
   { lat: 48.68881, lng: 1.69681, icon: "/icons/tent.png",      name: "Camping",        labelColor: "#8FBC5A" },
   { lat: 48.68873, lng: 1.69599, icon: "/icons/stage.png",     name: "Yves Stage",     labelColor: "#F4A7B9" },
   { lat: 48.69126, lng: 1.69098, icon: null, emoji: "🌸",      name: "Entrée 1",       labelColor: "#F4A7B9" },
-  { lat: 48.69156, lng: 1.70608, icon: null, emoji: "🌸",      name: "Entrée 2",       labelColor: "#F4A7B9" },
+  { lat: 48.69156, lng: 1.70808, icon: null, emoji: "🌸",      name: "Entrée 2",       labelColor: "#F4A7B9" },
 ];
 
 // ── MapPin ────────────────────────────────────────────────────
