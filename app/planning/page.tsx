@@ -52,17 +52,6 @@ type DJEntry = {
   photo: string | null;
 };
 
-const LINEUP: DJEntry[] = [
-  { id: "djdj",    name: "DJ DJ",    alias: "ou DJ D The Rock J", style: "House Barbuc",          photo: "/djs/djdj.png"    },
-  { id: "djlizot", name: "DJ Lizot", alias: "de Bouc Bel Air",    style: "Jul",                   photo: "/djs/djlizot.png" },
-  { id: "djboss",  name: "DJ Boss",  alias: "Ami de Chloé",       style: "Musique de Dauphin(e)", photo: "/djs/djboss.png"  },
-  { id: "tba1",    name: "???",      alias: "",                    style: "🌸 Reveal coming soon", photo: null               },
-  { id: "djis",    name: "DJ Maïs",  alias: "ou juste DJ ïs",     style: "White Girl Music",      photo: "/djs/djis.png"    },
-  { id: "tba2",    name: "???",      alias: "",                    style: "🌸 Reveal coming soon", photo: null               },
-  { id: "tba3",    name: "???",      alias: "",                    style: "🌸 Reveal coming soon", photo: null               },
-  { id: "tba4",    name: "???",      alias: "",                    style: "🌸 Reveal coming soon", photo: null               },
-];
-
 const CLOUDS = [
   { top: "5%",  duration: "40s", delay: "0s",    width: 180 },
   { top: "18%", duration: "62s", delay: "-25s",  width: 140 },
@@ -124,6 +113,7 @@ export default function PlanningPage() {
   const [tab,             setTab]             = useState<Tab>("artists");
   const [planningEnabled, setPlanningEnabled] = useState(false);
   const [scheduleData,    setScheduleData]    = useState<ScheduleData>(DEFAULT_SCHEDULE);
+  const [lineup,          setLineup]          = useState<DJEntry[]>([]);
 
   // Fetch planning_enabled + schedule from settings on mount
   useEffect(() => {
@@ -143,9 +133,33 @@ export default function PlanningPage() {
       });
   }, []);
 
-  // Fade-in observer: cards start hidden via CSS class, revealed when scrolled into view
+  // Fetch DJ lineup from DB on mount
   useEffect(() => {
-    if (tab !== "artists") return;
+    async function loadLineup() {
+      // Import here to avoid circular dep with getEventId
+      const { getEventId } = await import("@/lib/constants");
+      const eventId = await getEventId();
+      if (!eventId) return;
+      const { data } = await supabase
+        .from("djs")
+        .select("id, name, alias, style, photo, revealed")
+        .eq("event_id", eventId)
+        .order("display_order", { ascending: true, nullsFirst: false });
+      setLineup(
+        (data ?? []).map((dj) =>
+          dj.revealed
+            ? { id: dj.id, name: dj.name, alias: dj.alias ?? "", style: dj.style ?? "", photo: dj.photo }
+            : { id: dj.id, name: "???",   alias: "",             style: "🌸 Reveal coming soon",         photo: null }
+        )
+      );
+    }
+    loadLineup();
+  }, []);
+
+  // Fade-in observer: cards start hidden via CSS class, revealed when scrolled into view.
+  // Depends on lineup so it re-runs after DB data arrives.
+  useEffect(() => {
+    if (tab !== "artists" || lineup.length === 0) return;
     const cards = document.querySelectorAll(".dj-card");
     const observer = new IntersectionObserver(
       (entries) =>
@@ -156,7 +170,7 @@ export default function PlanningPage() {
     );
     cards.forEach((c) => observer.observe(c));
     return () => observer.disconnect();
-  }, [tab]);
+  }, [tab, lineup]);
 
   return (
     <div className="min-h-screen bg-cream">
@@ -233,7 +247,7 @@ export default function PlanningPage() {
 
           {/* DJ cards */}
           <div className="relative z-10 pb-28 pt-6">
-            {LINEUP.map((dj, i) => {
+            {lineup.map((dj, i) => {
               const photoLeft = i % 2 === 0;
 
               const photoEl = dj.photo ? (

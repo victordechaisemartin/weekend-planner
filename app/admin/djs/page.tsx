@@ -1,59 +1,47 @@
 "use client";
 
-// NOTE: The djs table RLS policy currently restricts SELECT to revealed rows only
-// and has no INSERT/UPDATE/DELETE policies. To use this admin page fully, add an
-// admin policy in Supabase:
-//   CREATE POLICY "djs: admin all" ON djs FOR ALL TO authenticated
-//   USING ((SELECT is_admin FROM users WHERE id = auth.uid()));
-
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { getEventId } from "@/lib/constants";
-import type { DJ } from "@/lib/types";
 
 // ── types ─────────────────────────────────────────────────────
 
+type DBDj = {
+  id: string;
+  event_id: string;
+  name: string;
+  alias: string | null;
+  style: string | null;
+  photo: string | null;
+  revealed: boolean;
+  display_order: number | null;
+};
+
 type DJForm = {
   name: string;
-  bio: string;
-  set_time: string;
-  photo_url: string;
+  alias: string;
+  style: string;
+  photo: string;
   revealed: boolean;
 };
 
 const EMPTY_FORM: DJForm = {
-  name: "", bio: "", set_time: "", photo_url: "", revealed: false,
+  name: "", alias: "", style: "", photo: "", revealed: false,
 };
-
-// ── helpers ───────────────────────────────────────────────────
-
-function formatSetTime(iso: string | null): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString("fr-FR", {
-    weekday: "short", day: "numeric", month: "short",
-    hour: "2-digit", minute: "2-digit",
-  });
-}
-
-function toDatetimeLocal(iso: string | null): string {
-  if (!iso) return "";
-  // datetime-local requires "YYYY-MM-DDTHH:MM"
-  return new Date(iso).toISOString().slice(0, 16);
-}
 
 // ── component ─────────────────────────────────────────────────
 
 export default function AdminDJsPage() {
-  const [djs,          setDjs]          = useState<DJ[]>([]);
-  const [loading,      setLoading]      = useState(true);
-  const [showAddForm,  setShowAddForm]  = useState(false);
-  const [addForm,      setAddForm]      = useState<DJForm>(EMPTY_FORM);
-  const [posting,      setPosting]      = useState(false);
-  const [editingId,    setEditingId]    = useState<string | null>(null);
-  const [editForm,     setEditForm]     = useState<DJForm>(EMPTY_FORM);
-  const [saving,       setSaving]       = useState(false);
-  const [confirmId,    setConfirmId]    = useState<string | null>(null);
-  const [toast,        setToast]        = useState("");
+  const [djs,         setDjs]         = useState<DBDj[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addForm,     setAddForm]     = useState<DJForm>(EMPTY_FORM);
+  const [posting,     setPosting]     = useState(false);
+  const [editingId,   setEditingId]   = useState<string | null>(null);
+  const [editForm,    setEditForm]    = useState<DJForm>(EMPTY_FORM);
+  const [saving,      setSaving]      = useState(false);
+  const [confirmId,   setConfirmId]   = useState<string | null>(null);
+  const [toast,       setToast]       = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function fetchDJs() {
@@ -63,8 +51,8 @@ export default function AdminDJsPage() {
       .from("djs")
       .select("*")
       .eq("event_id", eventId)
-      .order("set_time", { ascending: true, nullsFirst: false });
-    setDjs(data ?? []);
+      .order("display_order", { ascending: true, nullsFirst: false });
+    setDjs((data ?? []) as DBDj[]);
     setLoading(false);
   }
 
@@ -85,12 +73,12 @@ export default function AdminDJsPage() {
     if (!eventId) { setPosting(false); return; }
 
     const { error } = await supabase.from("djs").insert({
-      event_id:  eventId,
-      name:      addForm.name.trim(),
-      bio:       addForm.bio.trim() || null,
-      set_time:  addForm.set_time || null,
-      photo_url: addForm.photo_url.trim() || null,
-      revealed:  addForm.revealed,
+      event_id: eventId,
+      name:     addForm.name.trim(),
+      alias:    addForm.alias.trim()  || null,
+      style:    addForm.style.trim()  || null,
+      photo:    addForm.photo.trim()  || null,
+      revealed: addForm.revealed,
     });
 
     if (!error) {
@@ -104,7 +92,7 @@ export default function AdminDJsPage() {
 
   // ── reveal toggle ─────────────────────────────────────────────
 
-  async function handleToggleReveal(dj: DJ) {
+  async function handleToggleReveal(dj: DBDj) {
     await supabase
       .from("djs")
       .update({ revealed: !dj.revealed })
@@ -114,14 +102,14 @@ export default function AdminDJsPage() {
 
   // ── edit ──────────────────────────────────────────────────────
 
-  function startEdit(dj: DJ) {
+  function startEdit(dj: DBDj) {
     setEditingId(dj.id);
     setEditForm({
-      name:      dj.name,
-      bio:       dj.bio ?? "",
-      set_time:  toDatetimeLocal(dj.set_time),
-      photo_url: dj.photo_url ?? "",
-      revealed:  dj.revealed,
+      name:     dj.name,
+      alias:    dj.alias    ?? "",
+      style:    dj.style    ?? "",
+      photo:    dj.photo    ?? "",
+      revealed: dj.revealed,
     });
     setConfirmId(null);
   }
@@ -129,11 +117,11 @@ export default function AdminDJsPage() {
   async function handleSave(id: string) {
     setSaving(true);
     const { error } = await supabase.from("djs").update({
-      name:      editForm.name.trim(),
-      bio:       editForm.bio.trim() || null,
-      set_time:  editForm.set_time || null,
-      photo_url: editForm.photo_url.trim() || null,
-      revealed:  editForm.revealed,
+      name:     editForm.name.trim(),
+      alias:    editForm.alias.trim()  || null,
+      style:    editForm.style.trim()  || null,
+      photo:    editForm.photo.trim()  || null,
+      revealed: editForm.revealed,
     }).eq("id", id);
 
     if (!error) {
@@ -169,10 +157,7 @@ export default function AdminDJsPage() {
       )}
 
       {/* ── Add DJ button / form ── */}
-      <div
-        className="rounded-3xl overflow-hidden shadow-sm"
-        style={{ background: "white" }}
-      >
+      <div className="rounded-3xl overflow-hidden shadow-sm" style={{ background: "white" }}>
         <button
           onClick={() => setShowAddForm((v) => !v)}
           className="w-full flex items-center justify-between px-4 py-3 font-bold text-sm transition-colors"
@@ -188,9 +173,7 @@ export default function AdminDJsPage() {
         </button>
 
         {showAddForm && (
-          <div
-            className="px-4 pb-4 space-y-3 border-t border-[#2D2D2D]/08"
-          >
+          <div className="px-4 pb-4 space-y-3 border-t border-[#2D2D2D]/08">
             <DJFormFields form={addForm} onChange={setAddForm} />
             <button
               onClick={handleAdd}
@@ -233,18 +216,38 @@ export default function AdminDJsPage() {
                 className="rounded-3xl p-4 shadow-sm space-y-3"
                 style={{ background: "white" }}
               >
-                {/* Top row: info + reveal toggle */}
-                <div className="flex items-start justify-between gap-3">
+                {/* Top row: photo + info + reveal toggle */}
+                <div className="flex items-center gap-3">
+                  {/* Photo thumbnail */}
+                  <div
+                    className="w-12 h-12 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center"
+                    style={{ background: "#F4A7B933" }}
+                  >
+                    {dj.photo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={dj.photo}
+                        alt={dj.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-xl">🎧</span>
+                    )}
+                  </div>
+
+                  {/* Info */}
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-sm leading-tight truncate" style={{ color: "#2D2D2D" }}>
+                    <p className="font-bold text-sm leading-tight" style={{ color: "#2D2D2D" }}>
                       {dj.name}
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: "#2D2D2D66" }}>
-                      🕐 {formatSetTime(dj.set_time)}
-                    </p>
-                    {dj.bio && (
-                      <p className="text-xs mt-1 italic line-clamp-1" style={{ color: "#2D2D2D55" }}>
-                        {dj.bio.length > 50 ? dj.bio.slice(0, 50) + "…" : dj.bio}
+                    {dj.alias && (
+                      <p className="text-xs italic leading-tight mt-0.5" style={{ color: "#2D2D2D66" }}>
+                        {dj.alias}
+                      </p>
+                    )}
+                    {dj.style && (
+                      <p className="text-[10px] font-semibold uppercase tracking-wide mt-0.5" style={{ color: "#2D2D2D44" }}>
+                        {dj.style}
                       </p>
                     )}
                   </div>
@@ -366,26 +369,27 @@ function DJFormFields({
         className={field}
         style={{ fontSize: 16, color: "#2D2D2D" }}
       />
-      <textarea
-        placeholder="Bio / message mystère (genre hint si caché)"
-        value={form.bio}
-        onChange={(e) => onChange({ ...form, bio: e.target.value })}
-        rows={3}
-        className={`${field} resize-none`}
+      <input
+        type="text"
+        placeholder="Alias (ex: ou DJ D The Rock J)"
+        value={form.alias}
+        onChange={(e) => onChange({ ...form, alias: e.target.value })}
+        className={field}
         style={{ fontSize: 16, color: "#2D2D2D" }}
       />
       <input
-        type="datetime-local"
-        value={form.set_time}
-        onChange={(e) => onChange({ ...form, set_time: e.target.value })}
+        type="text"
+        placeholder="Style (ex: House Barbuc)"
+        value={form.style}
+        onChange={(e) => onChange({ ...form, style: e.target.value })}
         className={field}
         style={{ fontSize: 16, color: "#2D2D2D" }}
       />
       <input
         type="url"
         placeholder="URL photo (optionnel)"
-        value={form.photo_url}
-        onChange={(e) => onChange({ ...form, photo_url: e.target.value })}
+        value={form.photo}
+        onChange={(e) => onChange({ ...form, photo: e.target.value })}
         className={field}
         style={{ fontSize: 16, color: "#2D2D2D" }}
       />
