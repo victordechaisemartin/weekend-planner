@@ -153,7 +153,7 @@ export default function AdminAnnouncementsPage() {
       ) : announcements.length === 0 ? (
         <div className="py-16 text-center space-y-1">
           <p className="text-base font-bold" style={{ color: "#2D2D2D" }}>
-            Aucune annonce pour l'instant 🌸
+            Aucune annonce pour l&apos;instant 🌸
           </p>
           <p className="text-sm" style={{ color: "#2D2D2D66" }}>
             Sois le premier à poster !

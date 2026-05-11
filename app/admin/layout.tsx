@@ -47,7 +47,7 @@ export default function AdminLayout({
           className="text-xs underline"
           style={{ color: "#2D2D2D" }}
         >
-          ← Retour à l'app
+          ← Retour à l&apos;app
         </Link>
       </header>
       <AdminNav />
