@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 // ── ping animation ────────────────────────────────────────────
@@ -38,18 +38,18 @@ type Pin = {
 };
 
 const PINS: Pin[] = [
-  { lat: 48.68966, lng: 1.69303, icon: "/icons/house.png",     name: "Maison d'Yves",  labelColor: "#F4A7B9" },
-  { lat: 48.68845, lng: 1.69600, icon: "/icons/house.png",     name: "Maison Titanic", labelColor: "#C9B8E8" },
-  { lat: 48.68866, lng: 1.69520, icon: null, emoji: "🎣",      name: "Rambouboat",     labelColor: "#7EC8E3" },
-  { lat: 48.68967, lng: 1.70323, icon: "/icons/barn.png",      name: "Grange",         labelColor: "#D4A574" },
-  { lat: 48.68905, lng: 1.70455, icon: "/icons/tennis-court.png",    name: "Tennis",         labelColor: "#8FBC5A" },
-  { lat: 48.69028, lng: 1.70499, icon: "/icons/house.png",     name: "Maison Rouge",   labelColor: "#FF6B6B" },
-  { lat: 48.68966, lng: 1.70424, icon: null, emoji: "🏝️",     name: "Étang 2 îlots",  labelColor: "#7EC8E3" },
-  { lat: 48.69153, lng: 1.69923, icon: "/icons/treehouse.png", name: "Cabane",         labelColor: "#D4A574" },
-  { lat: 48.68881, lng: 1.69681, icon: "/icons/tent.png",      name: "Camping",        labelColor: "#8FBC5A" },
-  { lat: 48.68873, lng: 1.69599, icon: "/icons/stage.png",     name: "Yves Stage",     labelColor: "#F4A7B9" },
-  { lat: 48.69126, lng: 1.69098, icon: null, emoji: "🌸",      name: "Entrée 1",       labelColor: "#F4A7B9" },
-  { lat: 48.69156, lng: 1.70808, icon: null, emoji: "🌸",      name: "Entrée 2",       labelColor: "#F4A7B9" },
+  { lat: 48.68966, lng: 1.69303, icon: "/icons/house.png",        name: "Maison d'Yves",  labelColor: "#F4A7B9" },
+  { lat: 48.68845, lng: 1.69600, icon: "/icons/house.png",        name: "Maison Titanic", labelColor: "#C9B8E8" },
+  { lat: 48.68866, lng: 1.69520, icon: null, emoji: "🎣",         name: "Rambouboat",     labelColor: "#7EC8E3" },
+  { lat: 48.68967, lng: 1.70323, icon: "/icons/barn.png",         name: "Grange",         labelColor: "#D4A574" },
+  { lat: 48.68905, lng: 1.70455, icon: "/icons/tennis-court.png", name: "Tennis",         labelColor: "#8FBC5A" },
+  { lat: 48.69028, lng: 1.70499, icon: "/icons/house.png",        name: "Maison Rouge",   labelColor: "#FF6B6B" },
+  { lat: 48.68966, lng: 1.70424, icon: null, emoji: "🏝️",        name: "Étang 2 îlots",  labelColor: "#7EC8E3" },
+  { lat: 48.69153, lng: 1.69923, icon: "/icons/treehouse.png",    name: "Cabane",         labelColor: "#D4A574" },
+  { lat: 48.68881, lng: 1.69681, icon: "/icons/tent.png",         name: "Camping",        labelColor: "#8FBC5A" },
+  { lat: 48.68873, lng: 1.69599, icon: "/icons/stage.png",        name: "Yves Stage",     labelColor: "#F4A7B9" },
+  { lat: 48.69126, lng: 1.69098, icon: null, emoji: "🌸",         name: "Entrée 1",       labelColor: "#F4A7B9" },
+  { lat: 48.69156, lng: 1.70808, icon: null, emoji: "🌸",         name: "Entrée 2",       labelColor: "#F4A7B9" },
 ];
 
 // ── MapPin ────────────────────────────────────────────────────
@@ -68,21 +68,22 @@ function MapPin({ pin, scale }: { pin: Pin; scale: number }) {
         transformOrigin: "bottom center",
         cursor:          "pointer",
         zIndex:          10,
+        pointerEvents:   "auto",
       }}
     >
       {/* Pulsing ring — Yves Stage only */}
       {isStage && (
         <div style={{
-          position:     "absolute",
-          top:          -4,
-          left:         -4,
-          right:        -4,
-          bottom:       -4,
-          borderRadius: "50%",
-          border:       "2px solid #F4A7B9",
-          animation:    "ping 2s infinite",
-          opacity:      0.6,
-          pointerEvents:"none",
+          position:      "absolute",
+          top:           -4,
+          left:          -4,
+          right:         -4,
+          bottom:        -4,
+          borderRadius:  "50%",
+          border:        "2px solid #F4A7B9",
+          animation:     "ping 2s infinite",
+          opacity:       0.6,
+          pointerEvents: "none",
         }} />
       )}
 
@@ -110,17 +111,17 @@ function MapPin({ pin, scale }: { pin: Pin; scale: number }) {
 
       {/* Label — always visible */}
       <div style={{
-        marginTop:  2,
-        background: pin.labelColor,
-        color:      "white",
-        fontSize:   9,
-        fontWeight: 700,
-        padding:    "2px 6px",
+        marginTop:    2,
+        background:   pin.labelColor,
+        color:        "white",
+        fontSize:     9,
+        fontWeight:   700,
+        padding:      "2px 6px",
         borderRadius: 99,
-        whiteSpace: "nowrap",
-        textAlign:  "center",
-        boxShadow:  "0 1px 3px rgba(0,0,0,0.3)",
-        textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+        whiteSpace:   "nowrap",
+        textAlign:    "center",
+        boxShadow:    "0 1px 3px rgba(0,0,0,0.3)",
+        textShadow:   "0 1px 2px rgba(0,0,0,0.3)",
       }}>
         {pin.name}
       </div>
@@ -132,6 +133,22 @@ function MapPin({ pin, scale }: { pin: Pin; scale: number }) {
 
 export default function FestivalSVGMap() {
   const [currentScale, setCurrentScale] = useState(1);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [imgSize, setImgSize] = useState({ w: 0, h: 0 });
+
+  // Recalculate on resize / rotation
+  useEffect(() => {
+    const handleResize = () => {
+      if (imgRef.current) {
+        setImgSize({
+          w: imgRef.current.offsetWidth,
+          h: imgRef.current.offsetHeight,
+        });
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
     <div className="relative w-full h-full bg-[#FFF8F0]">
@@ -153,19 +170,43 @@ export default function FestivalSVGMap() {
               wrapperStyle={{ width: "100%", height: "100%" }}
               contentStyle={{ width: "100%", height: "100%" }}
             >
-              <div style={{ position: "relative", width: "100%", height: "100%" }}>
+              {/* Wrapper matches the rendered image exactly so pin % coords align */}
+              <div style={{
+                position:  "relative",
+                width:     imgSize.w || "100%",
+                height:    imgSize.h || "auto",
+                display:   "inline-block",
+              }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
+                  ref={imgRef}
                   src="/map-lola.png"
                   alt="Festival Map"
                   style={{ width: "100%", height: "auto", display: "block" }}
                   draggable={false}
+                  onLoad={() => {
+                    if (imgRef.current) {
+                      setImgSize({
+                        w: imgRef.current.offsetWidth,
+                        h: imgRef.current.offsetHeight,
+                      });
+                    }
+                  }}
                 />
 
-                {/* Pins — scale-invariant via inverse transform */}
-                {PINS.map((pin) => (
-                  <MapPin key={pin.name} pin={pin} scale={currentScale} />
-                ))}
+                {/* Pin overlay — same dimensions as the image */}
+                <div style={{
+                  position:      "absolute",
+                  top:           0,
+                  left:          0,
+                  width:         imgSize.w,
+                  height:        imgSize.h,
+                  pointerEvents: "none",
+                }}>
+                  {PINS.map((pin) => (
+                    <MapPin key={pin.name} pin={pin} scale={currentScale} />
+                  ))}
+                </div>
               </div>
             </TransformComponent>
 
