@@ -2,45 +2,45 @@
 
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
-// ── Schedule data ─────────────────────────────────────────────
+// ── Schedule types ────────────────────────────────────────────
 
-const SCHEDULE = [
-  {
-    day: "23",
-    badge: "VEN",
-    slots: [
-      { time: "18h",     activity: "Ouverture du festival" },
-      { time: "19h",     activity: "Atelier Drapeau"       },
-      { time: "20h",     activity: "Joe's Pizza"           },
-      { time: "22h",     activity: "Cocktail Bar"          },
-    ],
-  },
-  {
-    day: "24",
-    badge: "SAM",
-    slots: [
-      { time: "12h",     activity: "Vicar's Burgers"    },
-      { time: "13h-16h", activity: "Capture the Flag"   },
-      { time: "16h",     activity: "Bouille Pong"        },
-      { time: "19h",     activity: "Cochon"              },
-      { time: "20h",     activity: "Flower Party"        },
-      { time: "22h",     activity: "Début Happening"     },
-    ],
-  },
-  {
-    day: "25",
-    badge: "DIM",
-    slots: [
-      { time: "12h",     activity: "Brunch"          },
-      { time: "13h-16h", activity: "Alcoolympics"    },
-      { time: "18h",     activity: "Apéro"            },
-      { time: "19h",     activity: "Tacos Sunday"     },
-      { time: "20h",     activity: "Outdoor Cinema"   },
-      { time: "22h",     activity: "Game Night"       },
-    ],
-  },
-];
+type Slot = { time: string; activity: string };
+type ScheduleData = { fri: Slot[]; sat: Slot[]; sun: Slot[] };
+
+const DEFAULT_SCHEDULE: ScheduleData = {
+  fri: [
+    { time: "18h",     activity: "Ouverture du festival" },
+    { time: "19h",     activity: "Atelier"               },
+    { time: "20h",     activity: "Joe's Pizza"           },
+    { time: "22h",     activity: "Cocktail Bar"          },
+  ],
+  sat: [
+    { time: "12h",     activity: "Vicar's Burgers"   },
+    { time: "13h-16h", activity: "Secret"            },
+    { time: "18h",     activity: "Bouille Pong"       },
+    { time: "19h",     activity: "Cochon"             },
+    { time: "20h",     activity: "Flower Party"       },
+    { time: "22h",     activity: "Début Happening"    },
+  ],
+  sun: [
+    { time: "12h",     activity: "Brunch"       },
+    { time: "13h-16h", activity: "Secret"       },
+    { time: "18h",     activity: "Apéro"        },
+    { time: "19h",     activity: "Tacos Sunday" },
+    { time: "20h",     activity: "Chill Night?" },
+  ],
+};
+
+// Map DB schedule shape to the 3-column array the UI needs
+function toColumns(s: ScheduleData) {
+  return [
+    { day: "23", badge: "VEN", slots: s.fri },
+    { day: "24", badge: "SAM", slots: s.sat },
+    { day: "25", badge: "DIM", slots: s.sun },
+  ];
+}
 
 // ── DJ data ───────────────────────────────────────────────────
 
@@ -121,7 +121,27 @@ function GarlandHeader() {
 type Tab = "artists" | "planning";
 
 export default function PlanningPage() {
-  const [tab, setTab] = useState<Tab>("artists");
+  const [tab,             setTab]             = useState<Tab>("artists");
+  const [planningEnabled, setPlanningEnabled] = useState(false);
+  const [scheduleData,    setScheduleData]    = useState<ScheduleData>(DEFAULT_SCHEDULE);
+
+  // Fetch planning_enabled + schedule from settings on mount
+  useEffect(() => {
+    supabase
+      .from("settings")
+      .select("key, value")
+      .in("key", ["planning_enabled", "schedule"])
+      .then(({ data }) => {
+        const rows = data ?? [];
+        const enabled = rows.find((r) => r.key === "planning_enabled");
+        const sched   = rows.find((r) => r.key === "schedule");
+        if (enabled) setPlanningEnabled(enabled.value === "true");
+        if (sched) {
+          try { setScheduleData(JSON.parse(sched.value) as ScheduleData); }
+          catch { /* keep default */ }
+        }
+      });
+  }, []);
 
   // Fade-in observer: cards start hidden via CSS class, revealed when scrolled into view
   useEffect(() => {
@@ -156,8 +176,15 @@ export default function PlanningPage() {
           🎧 Artists
         </button>
         <button
-          disabled
-          className="flex-1 py-2.5 rounded-full text-sm font-semibold border border-pink text-pink bg-transparent opacity-40 cursor-not-allowed"
+          onClick={() => planningEnabled && setTab("planning")}
+          disabled={!planningEnabled}
+          className={cn(
+            "flex-1 py-2.5 rounded-full text-sm font-semibold transition-all duration-150",
+            tab === "planning"
+              ? "bg-pink text-white shadow-[0_4px_14px_0_rgba(244,167,185,0.45)]"
+              : "border border-pink text-pink bg-transparent",
+            !planningEnabled && "opacity-40 cursor-not-allowed"
+          )}
         >
           📅 Planning
         </button>
@@ -312,7 +339,7 @@ export default function PlanningPage() {
           <span className="absolute bottom-32 right-2 text-xl opacity-10 select-none -rotate-6" aria-hidden>🌸</span>
 
           <div className="grid grid-cols-3 gap-2.5">
-            {SCHEDULE.map(({ day, badge, slots }) => (
+            {toColumns(scheduleData).map(({ day, badge, slots }) => (
               <div key={day} className="flex flex-col">
                 <div className="flex items-baseline gap-1 mb-2">
                   <span className="text-3xl font-black text-pink leading-none">{day}</span>

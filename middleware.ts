@@ -25,7 +25,8 @@ export async function middleware(req: NextRequest) {
 
   const { data: { session } } = await supabase.auth.getSession();
 
-  const isAuthPage = req.nextUrl.pathname.startsWith("/auth");
+  const isAuthPage  = req.nextUrl.pathname.startsWith("/auth");
+  const isAdminPage = req.nextUrl.pathname.startsWith("/admin");
 
   if (!session && !isAuthPage) {
     return NextResponse.redirect(new URL("/auth", req.url));
@@ -34,6 +35,10 @@ export async function middleware(req: NextRequest) {
   if (session && isAuthPage) {
     return NextResponse.redirect(new URL("/announcements", req.url));
   }
+
+  // /admin routes pass through here for authenticated users.
+  // Non-admins hitting /admin are redirected by app/admin/layout.tsx.
+  void isAdminPage;
 
   return res;
 }
