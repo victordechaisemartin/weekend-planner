@@ -32,7 +32,7 @@ const PINS: Pin[] = [
   { name: "Camping",       xPct: 40, yPct: 58, emoji: "⛺",                   labelColor: "#8FBC5A" },
   { name: "Grange",        xPct: 65, yPct: 56, emoji: "🌾",                   labelColor: "#D4A574" },
   { name: "Maison Rouge",  xPct: 80, yPct: 44, emoji: "🏠",                   labelColor: "#FF6B6B" },
-  { name: "Étang 2 îlots", xPct: 82, yPct: 57, emoji: "🐟",                   labelColor: "#7EC8E3" },
+  { name: "Étang 2 îlots", xPct: 82, yPct: 50, emoji: "🐟",                   labelColor: "#7EC8E3" },
   { name: "Tennis",        xPct: 83, yPct: 68, emoji: "🎾",                   labelColor: "#8FBC5A" },
   { name: "Cabane",        xPct: 54, yPct: 25, emoji: "🛖",                   labelColor: "#D4A574" },
   { name: "Rambouboat",    xPct: 18, yPct: 58, emoji: "🐟",                   labelColor: "#7EC8E3" },
