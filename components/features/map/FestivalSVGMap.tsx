@@ -35,7 +35,7 @@ const PINS: Pin[] = [
   { name: "Étang 2 îlots", xPct: 82, yPct: 50, emoji: "🐟",                   labelColor: "#7EC8E3" },
   { name: "Tennis",        xPct: 81, yPct: 60, emoji: "🎾",                   labelColor: "#8FBC5A" },
   { name: "Cabane",        xPct: 65, yPct: 27, emoji: "🛖",                   labelColor: "#D4A574" },
-  { name: "Rambouboat",    xPct: 32, yPct: 45, emoji: "🐟",                   labelColor: "#7EC8E3" },
+  { name: "Rambouboat",    xPct: 32, yPct: 48, emoji: "🐟",                   labelColor: "#7EC8E3" },
 ];
 
 // ── MapPin ────────────────────────────────────────────────────
