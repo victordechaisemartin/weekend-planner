@@ -104,11 +104,16 @@ export default function AdminPlanningPage() {
   async function handleToggle() {
     const next = !planningEnabled;
     setPlanningEnabled(next);
-    await supabase.from("settings").upsert(
+    const { error } = await supabase.from("settings").upsert(
       { key: "planning_enabled", value: String(next) },
       { onConflict: "key" }
     );
-    showToast(next ? "Planning activé pour tous 🌸" : "Planning masqué 🌸");
+    if (error) {
+      setPlanningEnabled(!next); // revert optimistic update
+      showToast("Erreur : " + error.message);
+    } else {
+      showToast(next ? "Planning activé pour tous 🌸" : "Planning masqué 🌸");
+    }
   }
 
   // ── schedule mutations (all debounce to auto-save) ─────────────
