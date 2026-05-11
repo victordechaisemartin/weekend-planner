@@ -16,6 +16,8 @@ const lilitaOne = Lilita_One({
   variable: "--font-lilita",
 });
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Lolapabouillet 🌸",
   description: "Le plus grand festival du monde 🌸",
