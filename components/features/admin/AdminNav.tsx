@@ -4,11 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const TABS = [
-  { label: "📊 Dashboard",  href: "/admin/dashboard"      },
-  { label: "📢 News",       href: "/admin/announcements"  },
-  { label: "👥 Guests",     href: "/admin/guests"         },
-  { label: "🎧 DJs",        href: "/admin/djs"            },
-  { label: "🗓️ Planning",  href: "/admin/planning"       },
+  { label: "Dashboard",  href: "/admin/dashboard"      },
+  { label: "News",       href: "/admin/announcements"  },
+  { label: "Guests",     href: "/admin/guests"         },
+  { label: "DJs",        href: "/admin/djs"            },
+  { label: "Planning",  href: "/admin/planning"       },
 ];
 
 export default function AdminNav() {
