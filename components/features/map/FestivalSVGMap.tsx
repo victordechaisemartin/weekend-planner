@@ -49,8 +49,9 @@ function MapPin({ pin, scale }: { pin: Pin; scale: number }) {
         position:        "absolute",
         left:            `${pin.xPct}%`,
         top:             `${pin.yPct}%`,
-        transform:       `translate(-50%, -100%) scale(${1 / scale})`,
+        transform:       `translate(-50%, -100%) scale(${1 / scale}) translateZ(0)`,
         transformOrigin: "bottom center",
+        willChange:      "transform",
         display:         "flex",
         flexDirection:   "column",
         alignItems:      "center",
@@ -82,7 +83,6 @@ function MapPin({ pin, scale }: { pin: Pin; scale: number }) {
         display:        "flex",
         alignItems:     "center",
         justifyContent: "center",
-        filter:         "drop-shadow(0 2px 4px rgba(0,0,0,0.4))",
       }}>
         {pin.icon ? (
           /* eslint-disable-next-line @next/next/no-img-element */
