@@ -12,58 +12,43 @@ const pingKeyframes = `
   }
 `;
 
-// ── geo bounds ────────────────────────────────────────────────
-
-const W_MIN   = 1.6875;
-const W_MAX   = 1.7085;
-const LAT_MAX = 48.6935;
-const LAT_MIN = 48.6862;
-
-function toPercent(lat: number, lng: number) {
-  return {
-    x: ((lng - W_MIN) / (W_MAX - W_MIN)) * 100,
-    y: ((LAT_MAX - lat) / (LAT_MAX - LAT_MIN)) * 100,
-  };
-}
-
 // ── types & data ──────────────────────────────────────────────
 
 type Pin = {
-  lat:        number;
-  lng:        number;
+  name:       string;
+  xPct:       number;
+  yPct:       number;
   icon:       string | null;
   emoji?:     string;
-  name:       string;
   labelColor: string;
 };
 
 const PINS: Pin[] = [
-  { lat: 48.68966, lng: 1.69303, icon: "/icons/house.png",        name: "Maison d'Yves",  labelColor: "#F4A7B9" },
-  { lat: 48.68845, lng: 1.69600, icon: "/icons/house.png",        name: "Maison Titanic", labelColor: "#C9B8E8" },
-  { lat: 48.68866, lng: 1.69520, icon: null, emoji: "🎣",         name: "Rambouboat",     labelColor: "#7EC8E3" },
-  { lat: 48.68967, lng: 1.70323, icon: "/icons/barn.png",         name: "Grange",         labelColor: "#D4A574" },
-  { lat: 48.68905, lng: 1.70455, icon: "/icons/tennis-court.png", name: "Tennis",         labelColor: "#8FBC5A" },
-  { lat: 48.69028, lng: 1.70499, icon: "/icons/house.png",        name: "Maison Rouge",   labelColor: "#FF6B6B" },
-  { lat: 48.68966, lng: 1.70424, icon: null, emoji: "🏝️",        name: "Étang 2 îlots",  labelColor: "#7EC8E3" },
-  { lat: 48.69153, lng: 1.69923, icon: "/icons/treehouse.png",    name: "Cabane",         labelColor: "#D4A574" },
-  { lat: 48.68881, lng: 1.69681, icon: "/icons/tent.png",         name: "Camping",        labelColor: "#8FBC5A" },
-  { lat: 48.68873, lng: 1.69599, icon: "/icons/stage.png",        name: "Yves Stage",     labelColor: "#F4A7B9" },
-  { lat: 48.69126, lng: 1.69098, icon: null, emoji: "🌸",         name: "Entrée 1",       labelColor: "#F4A7B9" },
-  { lat: 48.69156, lng: 1.70808, icon: null, emoji: "🌸",         name: "Entrée 2",       labelColor: "#F4A7B9" },
+  { name: "Entrée 1",      xPct:  4, yPct: 38, icon: null,                      emoji: "🌸", labelColor: "#F4A7B9" },
+  { name: "Entrée 2",      xPct: 96, yPct: 35, icon: null,                      emoji: "🌸", labelColor: "#F4A7B9" },
+  { name: "Maison d'Yves", xPct: 18, yPct: 55, icon: "/icons/house.png",                     labelColor: "#F4A7B9" },
+  { name: "Maison Titanic",xPct: 20, yPct: 72, icon: "/icons/house.png",                     labelColor: "#C9B8E8" },
+  { name: "Yves Stage",    xPct: 28, yPct: 62, icon: "/icons/stage.png",                     labelColor: "#F4A7B9" },
+  { name: "Camping",       xPct: 38, yPct: 62, icon: "/icons/tent.png",                      labelColor: "#8FBC5A" },
+  { name: "Grange",        xPct: 62, yPct: 62, icon: "/icons/barn.png",                      labelColor: "#D4A574" },
+  { name: "Maison Rouge",  xPct: 79, yPct: 52, icon: "/icons/house.png",                     labelColor: "#FF6B6B" },
+  { name: "Étang 2 îlots", xPct: 82, yPct: 62, icon: "/icons/treehouse.png",                 labelColor: "#7EC8E3" },
+  { name: "Tennis",        xPct: 83, yPct: 74, icon: "/icons/tennis.png",                    labelColor: "#8FBC5A" },
+  { name: "Cabane",        xPct: 52, yPct: 22, icon: "/icons/treehouse.png",                 labelColor: "#D4A574" },
+  { name: "Rambouboat",    xPct: 22, yPct: 60, icon: null,                      emoji: "🎣", labelColor: "#7EC8E3" },
 ];
 
 // ── MapPin ────────────────────────────────────────────────────
 
 function MapPin({ pin, scale }: { pin: Pin; scale: number }) {
-  const { x, y } = toPercent(pin.lat, pin.lng);
-  const isStage  = pin.name === "Yves Stage";
+  const isStage = pin.name === "Yves Stage";
 
   return (
     <div
       style={{
         position:        "absolute",
-        left:            `${x}%`,
-        top:             `${y}%`,
+        left:            `${pin.xPct}%`,
+        top:             `${pin.yPct}%`,
         transform:       `translate(-50%, -100%) scale(${1 / scale})`,
         transformOrigin: "bottom center",
         cursor:          "pointer",
@@ -101,7 +86,12 @@ function MapPin({ pin, scale }: { pin: Pin; scale: number }) {
           <img
             src={pin.icon}
             alt={pin.name}
-            style={{ width: 36, height: 36, objectFit: "contain" }}
+            style={{
+              width:           36,
+              height:          36,
+              objectFit:       "contain",
+              imageRendering:  "crisp-edges",
+            }}
             draggable={false}
           />
         ) : (
@@ -136,7 +126,6 @@ export default function FestivalSVGMap() {
   const imgRef = useRef<HTMLImageElement>(null);
   const [imgSize, setImgSize] = useState({ w: 0, h: 0 });
 
-  // Recalculate on resize / rotation
   useEffect(() => {
     const handleResize = () => {
       if (imgRef.current) {
@@ -170,19 +159,24 @@ export default function FestivalSVGMap() {
               wrapperStyle={{ width: "100%", height: "100%" }}
               contentStyle={{ width: "100%", height: "100%" }}
             >
-              {/* Wrapper matches the rendered image exactly so pin % coords align */}
               <div style={{
-                position:  "relative",
-                width:     imgSize.w || "100%",
-                height:    imgSize.h || "auto",
-                display:   "inline-block",
+                position:       "relative",
+                width:          imgSize.w || "100%",
+                height:         imgSize.h || "auto",
+                display:        "inline-block",
+                imageRendering: "crisp-edges",
               }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   ref={imgRef}
                   src="/map-lola.png"
                   alt="Festival Map"
-                  style={{ width: "100%", height: "auto", display: "block" }}
+                  style={{
+                    width:          "100%",
+                    height:         "auto",
+                    display:        "block",
+                    imageRendering: "crisp-edges",
+                  }}
                   draggable={false}
                   onLoad={() => {
                     if (imgRef.current) {
