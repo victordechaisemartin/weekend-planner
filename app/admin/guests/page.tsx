@@ -13,6 +13,13 @@ type RawUser = {
   beer_level: number | null;
   wine_level: string | null;
   spirits_level: number | null;
+  snoring_warning: boolean | null;
+  present_fri_evening: boolean | null;
+  present_sat_midday:  boolean | null;
+  present_sat_evening: boolean | null;
+  present_sun_midday:  boolean | null;
+  present_sun_evening: boolean | null;
+  present_mon_midday:  boolean | null;
 };
 
 type CarRow = {
@@ -73,7 +80,7 @@ export default function AdminGuestsPage() {
       ] = await Promise.all([
         supabase
           .from("users")
-          .select("id, name, dietary, beer_level, wine_level, spirits_level")
+          .select("id, name, dietary, beer_level, wine_level, spirits_level, snoring_warning, present_fri_evening, present_sat_midday, present_sat_evening, present_sun_midday, present_sun_evening, present_mon_midday")
           .order("name", { ascending: true }),
         supabase
           .from("cars")
@@ -133,6 +140,16 @@ export default function AdminGuestsPage() {
   const beerHeavy  = guests.filter((g) => g.beer_level === 3).length;
   const wineHeavy  = guests.filter((g) => g.wine_level === "heavy").length;
   const spirHeavy  = guests.filter((g) => g.spirits_level === 3).length;
+  const snoringCount = guests.filter((g) => g.snoring_warning).length;
+
+  const presenceCounts = [
+    { label: "Ven soir",  count: guests.filter((g) => g.present_fri_evening).length },
+    { label: "Sam midi",  count: guests.filter((g) => g.present_sat_midday).length  },
+    { label: "Sam soir",  count: guests.filter((g) => g.present_sat_evening).length },
+    { label: "Dim midi",  count: guests.filter((g) => g.present_sun_midday).length  },
+    { label: "Dim soir",  count: guests.filter((g) => g.present_sun_evening).length },
+    { label: "Lun midi",  count: guests.filter((g) => g.present_mon_midday).length  },
+  ].filter((s) => s.count > 0);
 
   // ── filtered list ─────────────────────────────────────────────
   const visible = guests.filter((g) => {
@@ -184,13 +201,17 @@ export default function AdminGuestsPage() {
         </div>
       ) : (
         <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-          <SummaryChip emoji="🌸" value={total}     label="participants" />
-          {vegCount  > 0 && <SummaryChip emoji="🥬" value={vegCount}  label="végétariens"  />}
-          {porkCount > 0 && <SummaryChip emoji="🐷" value={porkCount} label="sans porc"    />}
-          {lactCount > 0 && <SummaryChip emoji="🥛" value={lactCount} label="lactose"      />}
-          {beerHeavy > 0 && <SummaryChip emoji="🍺" value={beerHeavy} label="heavy beer"   />}
-          {wineHeavy > 0 && <SummaryChip emoji="🍷" value={wineHeavy} label="heavy wine"   />}
-          {spirHeavy > 0 && <SummaryChip emoji="🥃" value={spirHeavy} label="heavy spirits"/>}
+          <SummaryChip emoji="🌸" value={total}        label="participants"  />
+          {vegCount     > 0 && <SummaryChip emoji="🥬" value={vegCount}     label="végétariens"  />}
+          {porkCount    > 0 && <SummaryChip emoji="🐷" value={porkCount}    label="sans porc"    />}
+          {lactCount    > 0 && <SummaryChip emoji="🥛" value={lactCount}    label="lactose"      />}
+          {beerHeavy    > 0 && <SummaryChip emoji="🍺" value={beerHeavy}    label="heavy beer"   />}
+          {wineHeavy    > 0 && <SummaryChip emoji="🍷" value={wineHeavy}    label="heavy wine"   />}
+          {spirHeavy    > 0 && <SummaryChip emoji="🥃" value={spirHeavy}    label="heavy spirits"/>}
+          {snoringCount > 0 && <SummaryChip emoji="😴" value={snoringCount} label="ronfleurs"    />}
+          {presenceCounts.map((s) => (
+            <SummaryChip key={s.label} emoji="📅" value={s.count} label={s.label} />
+          ))}
         </div>
       )}
 
@@ -311,13 +332,23 @@ function GuestCard({ guest: g }: { guest: GuestRow }) {
       className="rounded-2xl px-4 py-3 shadow-sm"
       style={{ background: cardBg(g) }}
     >
-      {/* Name */}
-      <p
-        className="font-[family-name:var(--font-lilita)] text-base uppercase leading-tight"
-        style={{ color: "#2D2D2D", WebkitTextStroke: "0.5px #2D2D2D" }}
-      >
-        {g.name}
-      </p>
+      {/* Name + snoring badge */}
+      <div className="flex items-center gap-2">
+        <p
+          className="font-[family-name:var(--font-lilita)] text-base uppercase leading-tight"
+          style={{ color: "#2D2D2D", WebkitTextStroke: "0.5px #2D2D2D" }}
+        >
+          {g.name}
+        </p>
+        {g.snoring_warning && (
+          <span
+            className="text-xs rounded-full px-2 py-0.5 font-semibold shrink-0"
+            style={{ background: "#C9B8E888", color: "#2D2D2D" }}
+          >
+            😴 Ronfleur
+          </span>
+        )}
+      </div>
 
       {/* Dietary + drink badges */}
       {(activeDiet.length > 0 || drinks.length > 0) && (

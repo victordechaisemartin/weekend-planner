@@ -24,6 +24,23 @@ const DRINK_LEVELS = [
 
 const WINE_LEVELS = ["none", "low", "medium", "heavy"] as const;
 
+type PresenceKey =
+  | "present_fri_evening"
+  | "present_sat_midday"
+  | "present_sat_evening"
+  | "present_sun_midday"
+  | "present_sun_evening"
+  | "present_mon_midday";
+
+const PRESENCE_SLOTS: { key: PresenceKey; label: string }[] = [
+  { key: "present_fri_evening", label: "Vendredi soir"  },
+  { key: "present_sat_midday",  label: "Samedi midi"    },
+  { key: "present_sat_evening", label: "Samedi soir"    },
+  { key: "present_sun_midday",  label: "Dimanche midi"  },
+  { key: "present_sun_evening", label: "Dimanche soir"  },
+  { key: "present_mon_midday",  label: "Lundi midi"     },
+];
+
 // ── helpers ───────────────────────────────────────────────────
 
 function parseDietary(raw: string | null): string[] {
@@ -91,11 +108,20 @@ export default function ProfilePage() {
   const router = useRouter();
 
   // Form fields
-  const [name,         setName]        = useState("");
-  const [dietary,      setDietary]     = useState<string[]>([]);
-  const [beerLevel,    setBeerLevel]   = useState(0);
-  const [wineLevel,    setWineLevel]   = useState(0);
-  const [spiritsLevel, setSpiritLevel] = useState(0);
+  const [name,          setName]          = useState("");
+  const [dietary,       setDietary]       = useState<string[]>([]);
+  const [beerLevel,     setBeerLevel]     = useState(0);
+  const [wineLevel,     setWineLevel]     = useState(0);
+  const [spiritsLevel,  setSpiritLevel]   = useState(0);
+  const [snoringWarning, setSnoringWarning] = useState(false);
+  const [presence, setPresence] = useState<Record<PresenceKey, boolean>>({
+    present_fri_evening: false,
+    present_sat_midday:  false,
+    present_sat_evening: false,
+    present_sun_midday:  false,
+    present_sun_evening: false,
+    present_mon_midday:  false,
+  });
 
   // Data loading
   const [loading, setLoading] = useState(true);
@@ -129,6 +155,15 @@ export default function ProfilePage() {
           setBeerLevel(data.beer_level ?? 0);
           setWineLevel(wineToNum(data.wine_level));
           setSpiritLevel(data.spirits_level ?? 0);
+          setSnoringWarning(data.snoring_warning ?? false);
+          setPresence({
+            present_fri_evening: data.present_fri_evening ?? false,
+            present_sat_midday:  data.present_sat_midday  ?? false,
+            present_sat_evening: data.present_sat_evening ?? false,
+            present_sun_midday:  data.present_sun_midday  ?? false,
+            present_sun_evening: data.present_sun_evening ?? false,
+            present_mon_midday:  data.present_mon_midday  ?? false,
+          });
         }
         setLoading(false);
       }
@@ -162,7 +197,8 @@ export default function ProfilePage() {
       beer_level:      beerLevel,
       wine_level:      wineToText(wineLevel),
       spirits_level:   spiritsLevel,
-      snoring_warning: false,
+      snoring_warning: snoringWarning,
+      ...presence,
     });
 
     if (error) console.error("profile save error:", error);
@@ -262,6 +298,58 @@ export default function ProfilePage() {
             <DrinkBar label="Drinking 🍺 Beer"        value={beerLevel}    onChange={setBeerLevel}   />
             <DrinkBar label="Drinking 🍷 Wine"        value={wineLevel}    onChange={setWineLevel}   />
             <DrinkBar label="Drinking 🥃 Hard liquor" value={spiritsLevel} onChange={setSpiritLevel} />
+
+            {/* Présence */}
+            <div>
+              <label className={labelCls}>
+                Quand seras-tu là ?{" "}
+                <span className="normal-case font-medium text-charcoal/30">(optional)</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {PRESENCE_SLOTS.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() =>
+                      setPresence((p) => ({ ...p, [key]: !p[key] }))
+                    }
+                    className={cn(
+                      "rounded-full px-3 py-2 text-sm font-semibold transition-all duration-150 border",
+                      presence[key]
+                        ? "bg-lavender text-charcoal border-lavender/50 shadow-sm"
+                        : "bg-white text-charcoal/50 border-charcoal/20 hover:border-charcoal/40"
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Ronflements */}
+            <div className="flex items-center justify-between w-full py-3 px-4 bg-white rounded-2xl shadow-sm border border-gray-100">
+              <div>
+                <p className="font-semibold text-sm text-charcoal">😴 Je ronfle</p>
+                <p className="text-xs text-charcoal/40">Tes co-tenteurs seront prévenus</p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={snoringWarning}
+                onClick={() => setSnoringWarning((v) => !v)}
+                className={cn(
+                  "relative w-12 h-6 rounded-full transition-colors duration-200 shrink-0",
+                  snoringWarning ? "bg-pink" : "bg-charcoal/20"
+                )}
+              >
+                <span
+                  className={cn(
+                    "absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200",
+                    snoringWarning ? "translate-x-7" : "translate-x-1"
+                  )}
+                />
+              </button>
+            </div>
 
             {/* Floral reminder */}
             <div className="rounded-2xl bg-pink/15 border border-pink/25 px-4 py-3.5">

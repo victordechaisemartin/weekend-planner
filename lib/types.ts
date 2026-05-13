@@ -14,6 +14,12 @@ export type User = {
   wine_level: string | null;
   spirits_level: number | null;
   snoring_warning: boolean;
+  present_fri_evening?: boolean;
+  present_sat_midday?:  boolean;
+  present_sat_evening?: boolean;
+  present_sun_midday?:  boolean;
+  present_sun_evening?: boolean;
+  present_mon_midday?:  boolean;
 };
 
 export type Car = {
