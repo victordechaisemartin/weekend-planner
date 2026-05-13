@@ -343,10 +343,17 @@ export default function ProfilePage() {
                 )}
               >
                 <span
-                  className={cn(
-                    "absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200",
-                    snoringWarning ? "translate-x-7" : "translate-x-1"
-                  )}
+                  style={{
+                    position: "absolute",
+                    top: "4px",
+                    left: snoringWarning ? "26px" : "4px",
+                    width: "16px",
+                    height: "16px",
+                    borderRadius: "50%",
+                    backgroundColor: "white",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                    transition: "left 0.2s ease",
+                  }}
                 />
               </button>
             </div>
