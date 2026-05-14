@@ -12,6 +12,11 @@ const pingKeyframes = `
   }
 `;
 
+// ── map dimensions ────────────────────────────────────────────
+
+const MAP_WIDTH  = 9355;
+const MAP_HEIGHT = 6616;
+
 // ── types & data ──────────────────────────────────────────────
 
 type Pin = {
@@ -142,23 +147,38 @@ export default function FestivalSVGMap() {
               wrapperStyle={{ width: "100%", height: "100%" }}
               contentStyle={{ width: "100%", height: "100%" }}
             >
-              {/* Image and overlay are siblings inside one container — both scale together */}
-              <div style={{ position: "relative", display: "inline-block", lineHeight: 0 }}>
+              {/* aspect-ratio container: height is always width × (H/W) — same formula
+                  the browser uses for the img, so overlay and image are pixel-perfect */}
+              <div style={{
+                position:    "relative",
+                width:       "100%",
+                aspectRatio: `${MAP_WIDTH} / ${MAP_HEIGHT}`,
+                lineHeight:  0,
+                overflow:    "hidden",
+              }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/map-lola.png"
                   alt="Festival Map"
-                  style={{ width: "100%", height: "auto", display: "block" }}
+                  style={{
+                    position:   "absolute",
+                    top:        0,
+                    left:       0,
+                    width:      "100%",
+                    height:     "100%",
+                    objectFit:  "fill",
+                    display:    "block",
+                  }}
                   draggable={false}
                 />
 
-                {/* Overlay — covers image exactly; no JS sizing needed */}
+                {/* Overlay shares the same aspect-ratio-derived height — no fractional drift */}
                 <div style={{
                   position:      "absolute",
                   top:           0,
                   left:          0,
-                  right:         0,
-                  bottom:        0,
+                  width:         "100%",
+                  height:        "100%",
                   pointerEvents: "none",
                 }}>
                   {PINS.map((pin) => (
