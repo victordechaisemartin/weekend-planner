@@ -15,6 +15,7 @@ export type TentData = Tent & {
 type Props = {
   tent: TentData;
   currentUserId: string | null;
+  isAdmin?: boolean;
   onJoin: (tentId: string) => void;
   onLeave: (tentId: string) => void;
   onRemoveGuest: (tentId: string, guestId: string) => void;
@@ -35,10 +36,12 @@ const TYPE_STYLES: Record<string, { card: string; typeBadge: string }> = {
     typeBadge: "bg-mint/40 text-[#3a8c78] border-mint/50",
   },
   Room: {
-    card: "bg-yellow/25 border-yellow/40",
-    typeBadge: "bg-yellow/50 text-[#8a6d00] border-yellow/55",
+    card: "bg-pink/10 border-pink/25",
+    typeBadge: "bg-pink/30 text-charcoal/70 border-pink/40",
   },
 };
+
+const TYPE_LABELS: Record<string, string> = { Tent: "Tent", Van: "Van", Room: "Chambre" };
 
 const TYPE_ICONS: Record<string, string> = { Tent: "⛺", Van: "🚐", Room: "🏠" };
 
@@ -49,6 +52,7 @@ function fallbackStyles(type: string) {
 export default function TentCard({
   tent,
   currentUserId,
+  isAdmin = false,
   onJoin,
   onLeave,
   onRemoveGuest,
@@ -103,10 +107,13 @@ export default function TentCard({
             🏕️ {tent.host.name}
           </p>
           <p className="text-xs text-charcoal/50 mt-0.5 truncate">{tent.name}</p>
+          {tent.type === "Room" && (
+            <p className="text-xs text-charcoal/40 mt-0.5">Ajoutée par l&apos;organisateur</p>
+          )}
         </div>
 
         <div className="flex flex-col items-end gap-1.5 shrink-0">
-          {isHost && (
+          {(isHost || isAdmin) && (
             <div className="flex gap-1">
               <button
                 type="button"
@@ -133,7 +140,7 @@ export default function TentCard({
               styles.typeBadge
             )}
           >
-            {TYPE_ICONS[tent.type] ?? "⛺"} {tent.type}
+            {TYPE_ICONS[tent.type] ?? "⛺"} {TYPE_LABELS[tent.type] ?? tent.type}
           </span>
 
           {isFull ? (
@@ -199,8 +206,8 @@ export default function TentCard({
               )}
             </div>
 
-            {/* ✕ only for other guests — not the host's own guest row */}
-            {isHost && g.id !== tent.host_id && (
+            {/* ✕ for host or admin — not the host's own guest row */}
+            {(isHost || isAdmin) && g.id !== tent.host_id && (
               <button
                 onClick={() => onRemoveGuest(tent.id, g.id)}
                 disabled={busy}

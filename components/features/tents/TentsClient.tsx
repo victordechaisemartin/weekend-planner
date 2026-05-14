@@ -60,7 +60,7 @@ async function loadTents(): Promise<TentData[]> {
 export default function TentsClient() {
   // useAuth is only needed for user-specific UI (your tent, join/leave buttons).
   // Data fetching starts immediately on mount — it does not wait for auth.
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, profile, isAdmin, loading: authLoading } = useAuth();
   const currentUserId = user?.id ?? null;
 
   const [tents, setTents] = useState<TentData[]>([]);
@@ -247,6 +247,7 @@ export default function TentsClient() {
               key={tent.id}
               tent={tent}
               currentUserId={currentUserId}
+              isAdmin={isAdmin}
               onJoin={handleJoin}
               onLeave={handleLeave}
               onRemoveGuest={handleRemoveGuest}
@@ -272,6 +273,7 @@ export default function TentsClient() {
       {showModal && (
         <AddTentModal
           hostName={profile?.name ?? ""}
+          isAdmin={isAdmin}
           error={addError}
           onClose={() => { setShowModal(false); setAddError(null); }}
           onSubmit={handleAddTent}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { getEventId } from "@/lib/constants";
 import { useAuth } from "@/lib/useAuth";
+import AddTentModal from "@/components/features/tents/AddTentModal";
 
 const FESTIVAL_DATE = new Date("2026-05-22T19:00:00");
 
@@ -35,9 +36,11 @@ type DashboardStats = {
 };
 
 export default function DashboardPage() {
-  const { profile } = useAuth();
-  const [stats, setStats]     = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, profile } = useAuth();
+  const [stats, setStats]         = useState<DashboardStats | null>(null);
+  const [loading, setLoading]     = useState(true);
+  const [showRoomModal, setShowRoomModal] = useState(false);
+  const [roomError, setRoomError]         = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -89,6 +92,27 @@ export default function DashboardPage() {
 
     load();
   }, []);
+
+  async function handleAddRoom(form: {
+    name: string; type: string; capacity: number; snoring: boolean;
+  }) {
+    const userId = user?.id
+      ?? (await supabase.auth.getSession()).data.session?.user?.id
+      ?? null;
+    if (!userId) { setRoomError("Non authentifié"); return; }
+    const eventId = await getEventId();
+    if (!eventId) { setRoomError("Événement introuvable"); return; }
+    setRoomError(null);
+    const { error } = await supabase.from("tents").insert({
+      event_id: eventId,
+      host_id:  userId,
+      name:     form.name,
+      type:     "Room",
+      capacity: form.capacity,
+    });
+    if (error) { setRoomError(error.message); throw new Error(error.message); }
+    setShowRoomModal(false);
+  }
 
   const firstName = profile?.name?.split(" ")[0] ?? "Victor";
   const days      = daysUntil(FESTIVAL_DATE);
@@ -190,7 +214,25 @@ export default function DashboardPage() {
         >
           🎧 Révéler un DJ
         </Link>
+        <button
+          onClick={() => setShowRoomModal(true)}
+          className="flex items-center justify-center gap-2 rounded-full py-4 text-base font-bold shadow-md active:scale-95 transition-transform"
+          style={{ background: "#B8E4D8", color: "#2D2D2D" }}
+        >
+          🏠 Ajouter une chambre
+        </button>
       </div>
+
+      {showRoomModal && (
+        <AddTentModal
+          hostName={profile?.name ?? ""}
+          isAdmin={true}
+          defaultType="Room"
+          error={roomError}
+          onClose={() => { setShowRoomModal(false); setRoomError(null); }}
+          onSubmit={handleAddRoom}
+        />
+      )}
 
     </div>
   );

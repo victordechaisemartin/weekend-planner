@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   hostName: string;
+  isAdmin?: boolean;
+  defaultType?: TentType;
   error?: string | null;
   onClose: () => void;
   onSubmit: (data: {
@@ -27,9 +29,9 @@ const inputCls =
 const labelCls =
   "block text-[11px] font-bold uppercase tracking-widest text-charcoal/40 mb-1.5";
 
-export default function AddTentModal({ hostName, error, onClose, onSubmit }: Props) {
+export default function AddTentModal({ hostName, isAdmin = false, defaultType, error, onClose, onSubmit }: Props) {
   const [name, setName] = useState("");
-  const [type, setType] = useState<TentType>("Tent");
+  const [type, setType] = useState<TentType>(defaultType ?? "Tent");
   const [capacity, setCapacity] = useState(4);
   const [snoring, setSnoring] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -94,7 +96,7 @@ export default function AddTentModal({ hostName, error, onClose, onSubmit }: Pro
             <label className={labelCls}>Type</label>
             <div className="flex rounded-2xl overflow-hidden border border-white/80 shadow-sm">
               {TYPES.map((t, i) => {
-                const isDisabled = t === "Room";
+                const isDisabled = t === "Room" && !isAdmin;
                 return (
                   <button
                     key={t}
