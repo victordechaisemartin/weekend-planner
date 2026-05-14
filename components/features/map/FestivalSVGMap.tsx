@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 // ── ping animation ────────────────────────────────────────────
@@ -12,10 +12,9 @@ const pingKeyframes = `
   }
 `;
 
-// ── map dimensions ────────────────────────────────────────────
+// ── mobile offset ─────────────────────────────────────────────
 
-const MAP_WIDTH  = 9355;
-const MAP_HEIGHT = 6616;
+const MOBILE_Y_OFFSET = -4;
 
 // ── types & data ──────────────────────────────────────────────
 
@@ -45,15 +44,20 @@ const PINS: Pin[] = [
 
 // ── MapPin ────────────────────────────────────────────────────
 
-function MapPin({ pin, scale }: { pin: Pin; scale: number }) {
-  const isStage = pin.name === "Yves Stage";
+function MapPin({ pin, scale, mobileOffset }: {
+  pin: Pin;
+  scale: number;
+  mobileOffset: number;
+}) {
+  const isStage    = pin.name === "Yves Stage";
+  const correctedY = pin.yPct + mobileOffset;
 
   return (
     <div
       style={{
         position:        "absolute",
         left:            `${pin.xPct}%`,
-        top:             `${pin.yPct}%`,
+        top:             `${correctedY}%`,
         transform:       `translate(-50%, -100%) scale(${1 / scale}) translateZ(0)`,
         transformOrigin: "bottom center",
         willChange:      "transform",
@@ -126,6 +130,14 @@ function MapPin({ pin, scale }: { pin: Pin; scale: number }) {
 
 export default function FestivalSVGMap() {
   const [currentScale, setCurrentScale] = useState(1);
+  const [isMobile,     setIsMobile]     = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   return (
     <div className="relative w-full h-full bg-[#FFF8F0]">
@@ -147,39 +159,34 @@ export default function FestivalSVGMap() {
               wrapperStyle={{ width: "100%", height: "100%" }}
               contentStyle={{ width: "100%", height: "100%" }}
             >
-              {/* aspect-ratio container: height is always width × (H/W) — same formula
-                  the browser uses for the img, so overlay and image are pixel-perfect */}
-              <div style={{
-                position:    "relative",
-                width:       "100%",
-                aspectRatio: `${MAP_WIDTH} / ${MAP_HEIGHT}`,
-                lineHeight:  0,
-              }}>
+              <div style={{ position: "relative", display: "inline-block", lineHeight: 0 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/map-lola.png"
                   alt="Festival Map"
                   style={{
-                    position: "absolute",
-                    top:      0,
-                    left:     0,
-                    width:    "100%",
-                    height:   "100%",
+                    width:                    "100%",
+                    height:                   "auto",
+                    display:                  "block",
+                    transform:                "translateZ(0)",
+                    backfaceVisibility:       "hidden",
+                    WebkitBackfaceVisibility: "hidden",
                   }}
                   draggable={false}
                 />
 
-                {/* Overlay shares the same aspect-ratio-derived height — no fractional drift */}
                 <div style={{
                   position:      "absolute",
-                  top:           0,
-                  left:          0,
-                  width:         "100%",
-                  height:        "100%",
+                  inset:         0,
                   pointerEvents: "none",
                 }}>
                   {PINS.map((pin) => (
-                    <MapPin key={pin.name + pin.xPct} pin={pin} scale={currentScale} />
+                    <MapPin
+                      key={pin.name + pin.xPct}
+                      pin={pin}
+                      scale={currentScale}
+                      mobileOffset={isMobile ? MOBILE_Y_OFFSET : 0}
+                    />
                   ))}
                 </div>
               </div>
