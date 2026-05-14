@@ -154,20 +154,17 @@ export default function FestivalSVGMap() {
                 width:       "100%",
                 aspectRatio: `${MAP_WIDTH} / ${MAP_HEIGHT}`,
                 lineHeight:  0,
-                overflow:    "hidden",
               }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/map-lola.png"
                   alt="Festival Map"
                   style={{
-                    position:   "absolute",
-                    top:        0,
-                    left:       0,
-                    width:      "100%",
-                    height:     "100%",
-                    objectFit:  "fill",
-                    display:    "block",
+                    position: "absolute",
+                    top:      0,
+                    left:     0,
+                    width:    "100%",
+                    height:   "100%",
                   }}
                   draggable={false}
                 />
