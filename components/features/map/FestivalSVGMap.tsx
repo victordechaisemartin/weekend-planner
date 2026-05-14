@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 // ── ping animation ────────────────────────────────────────────
@@ -121,7 +121,32 @@ function MapPin({ pin, scale }: { pin: Pin; scale: number }) {
 
 export default function FestivalSVGMap() {
   const [currentScale, setCurrentScale] = useState(1);
-  const imgRef = useRef<HTMLImageElement>(null);
+  const imgRef     = useRef<HTMLImageElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  const syncOverlay = useCallback(() => {
+    if (!imgRef.current || !overlayRef.current) return;
+    const rect = imgRef.current.getBoundingClientRect();
+    overlayRef.current.style.width  = rect.width  + "px";
+    overlayRef.current.style.height = rect.height + "px";
+  }, []);
+
+  useEffect(() => {
+    const img = imgRef.current;
+    if (!img) return;
+
+    if (img.complete) syncOverlay();
+
+    img.addEventListener("load", syncOverlay);
+
+    const observer = new ResizeObserver(syncOverlay);
+    observer.observe(img);
+
+    return () => {
+      img.removeEventListener("load", syncOverlay);
+      observer.disconnect();
+    };
+  }, [syncOverlay]);
 
   return (
     <div className="relative w-full h-full bg-[#FFF8F0]">
@@ -135,7 +160,7 @@ export default function FestivalSVGMap() {
         wheel={{ disabled: false }}
         pinch={{ disabled: false }}
         doubleClick={{ disabled: false }}
-        onTransform={(_, state) => setCurrentScale(state.scale)}
+        onTransform={(_, state) => { setCurrentScale(state.scale); syncOverlay(); }}
       >
         {({ zoomIn, zoomOut, resetTransform }) => (
           <>
@@ -143,8 +168,7 @@ export default function FestivalSVGMap() {
               wrapperStyle={{ width: "100%", height: "100%" }}
               contentStyle={{ width: "100%", height: "100%", willChange: "transform" }}
             >
-              {/* lineHeight:0 removes ghost whitespace below inline-block img */}
-              <div style={{ position: "relative", display: "inline-block", lineHeight: 0 }}>
+              <div style={{ position: "relative", width: "100%", lineHeight: 0 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   ref={imgRef}
@@ -161,8 +185,18 @@ export default function FestivalSVGMap() {
                   draggable={false}
                 />
 
-                {/* Overlay — inset:0 always matches the image exactly, no JS sizing needed */}
-                <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+                {/* Overlay — sized explicitly by ResizeObserver to match actual image pixels */}
+                <div
+                  ref={overlayRef}
+                  style={{
+                    position:      "absolute",
+                    top:           0,
+                    left:          0,
+                    width:         "100%",
+                    height:        "100%",
+                    pointerEvents: "none",
+                  }}
+                >
                   {PINS.map((pin) => (
                     <MapPin key={pin.name + pin.xPct} pin={pin} scale={currentScale} />
                   ))}
