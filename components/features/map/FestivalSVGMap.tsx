@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 // ── ping animation ────────────────────────────────────────────
@@ -24,18 +24,18 @@ type Pin = {
 };
 
 const PINS: Pin[] = [
-  { name: "Entrée 1",      xPct: 15, yPct: 22, emoji: "🌸",                   labelColor: "#F4A7B9" },
-  { name: "Entrée 2",      xPct: 96, yPct: 36, emoji: "🌸",                   labelColor: "#F4A7B9" },
-  { name: "Maison d'Yves", xPct: 27, yPct: 40, emoji: "🏠",                   labelColor: "#F4A7B9" },
-  { name: "Maison Titanic",xPct: 38, yPct: 57, emoji: "🏠",                   labelColor: "#C9B8E8" },
-  { name: "Yves Stage",    xPct: 38, yPct: 49, emoji: "🎤",                   labelColor: "#F4A7B9" },
-  { name: "Camping",       xPct: 45, yPct: 50, emoji: "⛺",                   labelColor: "#8FBC5A" },
-  { name: "Grange",        xPct: 72, yPct: 50, emoji: "🚜",                   labelColor: "#D4A574" },
-  { name: "Maison Rouge",  xPct: 87, yPct: 44, emoji: "🏠",                   labelColor: "#FF6B6B" },
-  { name: "Étang 2 îlots", xPct: 82, yPct: 50, emoji: "🐟",                   labelColor: "#7EC8E3" },
-  { name: "Tennis",        xPct: 81, yPct: 60, emoji: "🎾",                   labelColor: "#8FBC5A" },
-  { name: "Cabane",        xPct: 65, yPct: 27, emoji: "🛖",                   labelColor: "#D4A574" },
-  { name: "Rambouboat",    xPct: 32, yPct: 48, emoji: "🐟",                   labelColor: "#7EC8E3" },
+  { name: "Entrée 1",      xPct: 15, yPct: 22, emoji: "🌸", labelColor: "#F4A7B9" },
+  { name: "Entrée 2",      xPct: 96, yPct: 36, emoji: "🌸", labelColor: "#F4A7B9" },
+  { name: "Maison d'Yves", xPct: 27, yPct: 40, emoji: "🏠", labelColor: "#F4A7B9" },
+  { name: "Maison Titanic",xPct: 38, yPct: 57, emoji: "🏠", labelColor: "#C9B8E8" },
+  { name: "Yves Stage",    xPct: 38, yPct: 49, emoji: "🎤", labelColor: "#F4A7B9" },
+  { name: "Camping",       xPct: 45, yPct: 50, emoji: "⛺", labelColor: "#8FBC5A" },
+  { name: "Grange",        xPct: 72, yPct: 50, emoji: "🚜", labelColor: "#D4A574" },
+  { name: "Maison Rouge",  xPct: 87, yPct: 44, emoji: "🏠", labelColor: "#FF6B6B" },
+  { name: "Étang 2 îlots", xPct: 82, yPct: 50, emoji: "🐟", labelColor: "#7EC8E3" },
+  { name: "Tennis",        xPct: 81, yPct: 60, emoji: "🎾", labelColor: "#8FBC5A" },
+  { name: "Cabane",        xPct: 65, yPct: 27, emoji: "🛖", labelColor: "#D4A574" },
+  { name: "Rambouboat",    xPct: 32, yPct: 48, emoji: "🐟", labelColor: "#7EC8E3" },
 ];
 
 // ── MapPin ────────────────────────────────────────────────────
@@ -85,7 +85,7 @@ function MapPin({ pin, scale }: { pin: Pin; scale: number }) {
         justifyContent: "center",
       }}>
         {pin.icon ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={pin.icon}
             alt={pin.name}
@@ -97,7 +97,7 @@ function MapPin({ pin, scale }: { pin: Pin; scale: number }) {
         )}
       </div>
 
-      {/* Label — always visible, centered under icon */}
+      {/* Label */}
       <div style={{
         marginTop:    2,
         background:   pin.labelColor,
@@ -121,32 +121,6 @@ function MapPin({ pin, scale }: { pin: Pin; scale: number }) {
 
 export default function FestivalSVGMap() {
   const [currentScale, setCurrentScale] = useState(1);
-  const imgRef     = useRef<HTMLImageElement>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
-
-  const syncOverlay = useCallback(() => {
-    if (!imgRef.current || !overlayRef.current) return;
-    const rect = imgRef.current.getBoundingClientRect();
-    overlayRef.current.style.width  = rect.width  + "px";
-    overlayRef.current.style.height = rect.height + "px";
-  }, []);
-
-  useEffect(() => {
-    const img = imgRef.current;
-    if (!img) return;
-
-    if (img.complete) syncOverlay();
-
-    img.addEventListener("load", syncOverlay);
-
-    const observer = new ResizeObserver(syncOverlay);
-    observer.observe(img);
-
-    return () => {
-      img.removeEventListener("load", syncOverlay);
-      observer.disconnect();
-    };
-  }, [syncOverlay]);
 
   return (
     <div className="relative w-full h-full bg-[#FFF8F0]">
@@ -160,43 +134,33 @@ export default function FestivalSVGMap() {
         wheel={{ disabled: false }}
         pinch={{ disabled: false }}
         doubleClick={{ disabled: false }}
-        onTransform={(_, state) => { setCurrentScale(state.scale); syncOverlay(); }}
+        onTransform={(_, state) => setCurrentScale(state.scale)}
       >
         {({ zoomIn, zoomOut, resetTransform }) => (
           <>
             <TransformComponent
               wrapperStyle={{ width: "100%", height: "100%" }}
-              contentStyle={{ width: "100%", height: "100%", willChange: "transform" }}
+              contentStyle={{ width: "100%", height: "100%" }}
             >
-              <div style={{ position: "relative", width: "100%", lineHeight: 0 }}>
+              {/* Image and overlay are siblings inside one container — both scale together */}
+              <div style={{ position: "relative", display: "inline-block", lineHeight: 0 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  ref={imgRef}
                   src="/map-lola.png"
                   alt="Festival Map"
-                  style={{
-                    width:                    "100%",
-                    height:                   "auto",
-                    display:                  "block",
-                    transform:                "translateZ(0)",
-                    backfaceVisibility:       "hidden",
-                    WebkitBackfaceVisibility: "hidden",
-                  }}
+                  style={{ width: "100%", height: "auto", display: "block" }}
                   draggable={false}
                 />
 
-                {/* Overlay — sized explicitly by ResizeObserver to match actual image pixels */}
-                <div
-                  ref={overlayRef}
-                  style={{
-                    position:      "absolute",
-                    top:           0,
-                    left:          0,
-                    width:         "100%",
-                    height:        "100%",
-                    pointerEvents: "none",
-                  }}
-                >
+                {/* Overlay — covers image exactly; no JS sizing needed */}
+                <div style={{
+                  position:      "absolute",
+                  top:           0,
+                  left:          0,
+                  right:         0,
+                  bottom:        0,
+                  pointerEvents: "none",
+                }}>
                   {PINS.map((pin) => (
                     <MapPin key={pin.name + pin.xPct} pin={pin} scale={currentScale} />
                   ))}
@@ -204,7 +168,7 @@ export default function FestivalSVGMap() {
               </div>
             </TransformComponent>
 
-            {/* Zoom controls */}
+            {/* Zoom controls — outside TransformComponent so they don't move */}
             <div className="absolute bottom-4 right-4 flex flex-col gap-2 z-10">
               <button
                 onClick={() => zoomIn()}
