@@ -14,7 +14,7 @@ const pingKeyframes = `
 
 // ── mobile offset ─────────────────────────────────────────────
 
-const MOBILE_Y_OFFSET = -4;
+const MOBILE_Y_OFFSET = -10;
 
 // ── types & data ──────────────────────────────────────────────
 
