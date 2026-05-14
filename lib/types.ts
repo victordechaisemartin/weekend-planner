@@ -29,6 +29,8 @@ export type Car = {
   address: string;
   seats_total: number;
   departure_datetime: string;
+  note?: string | null;
+  stops?: string[];
 };
 
 export type CarPassenger = {

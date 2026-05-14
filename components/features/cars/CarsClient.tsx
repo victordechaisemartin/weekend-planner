@@ -22,6 +22,8 @@ type RawCarRow = {
   address: string;
   seats_total: number;
   departure_datetime: string;
+  note: string | null;
+  stops: string[] | null;
   driver: { id: string; name: string } | null;
   car_passengers: RawPassengerRef[];
 };
@@ -51,6 +53,8 @@ async function loadCars(): Promise<CarData[]> {
     address: row.address,
     seats_total: row.seats_total,
     departure_datetime: row.departure_datetime,
+    note: row.note ?? null,
+    stops: (row.stops ?? []) as string[],
     driver: row.driver ?? { id: row.driver_id, name: "Unknown" },
     passengers: (row.car_passengers ?? [])
       .map((cp) => cp.user)
@@ -140,7 +144,7 @@ export default function CarsClient() {
     await refresh();
   }
 
-  async function handleEdit(carId: string, form: { address: string; date: string; time: string; seats: number }) {
+  async function handleEdit(carId: string, form: { address: string; date: string; time: string; seats: number; note: string | null; stops: string[] }) {
     const car = cars.find((c) => c.id === carId);
     const departure_datetime = new Date(`${form.date}T${form.time}:00`).toISOString();
 
@@ -161,7 +165,7 @@ export default function CarsClient() {
     }
 
     await supabase.from("cars")
-      .update({ address: form.address, departure_datetime, seats_total: form.seats })
+      .update({ address: form.address, departure_datetime, seats_total: form.seats, note: form.note ?? null, stops: form.stops ?? [] })
       .eq("id", carId);
     await refresh();
     setEditToast(true);
@@ -179,6 +183,8 @@ export default function CarsClient() {
     seats: number;
     date: string;
     time: string;
+    note: string | null;
+    stops: string[];
   }) {
     if (!currentUserId) return;
     const eventId = await getEventId();
@@ -193,6 +199,8 @@ export default function CarsClient() {
       address: form.address,
       seats_total: form.seats,
       departure_datetime,
+      note: form.note ?? null,
+      stops: form.stops ?? [],
     });
     if (error) {
       console.error("add car error:", error);

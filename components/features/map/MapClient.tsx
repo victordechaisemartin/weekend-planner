@@ -43,11 +43,16 @@ type CarInfo = {
   address: string;
   seats_total: number;
   departure_datetime: string;
+  stops: string[];
   driver: { id: string; name: string };
   passengers: { id: string; name: string }[];
 };
 
-type MappedCar = CarInfo & { coords: [number, number]; color: string; };
+type MappedCar = CarInfo & {
+  coords: [number, number];
+  stopCoords: ([number, number] | null)[];
+  color: string;
+};
 
 // ── helpers ───────────────────────────────────────────────────
 
@@ -102,6 +107,7 @@ async function fetchCars(eventId: string): Promise<CarInfo[]> {
 
   return rawCars.map((car) => ({
     ...car,
+    stops: (car.stops ?? []) as string[],
     driver:
       (drivers ?? []).find((d) => d.id === car.driver_id) ??
       { id: car.driver_id, name: "Unknown" },
@@ -133,12 +139,20 @@ export default function MapClient() {
 
       const cars = await fetchCars(event.id);
 
-      // Geocode all addresses in parallel; skip any that fail
+      // Geocode start address + all stops in parallel; skip failures
       const results = await Promise.allSettled(
         cars.map(async (car, i): Promise<MappedCar> => {
-          const coords = await geocode(car.address);
-          if (!coords) throw new Error("no coords");
-          return { ...car, coords, color: PASTEL[i % PASTEL.length] };
+          const [startCoords, ...stopCoords] = await Promise.all([
+            geocode(car.address),
+            ...(car.stops ?? []).map((s) => geocode(s)),
+          ]);
+          if (!startCoords) throw new Error("no coords");
+          return {
+            ...car,
+            coords: startCoords,
+            stopCoords,
+            color: PASTEL[i % PASTEL.length],
+          };
         })
       );
 
@@ -210,19 +224,46 @@ export default function MapClient() {
       >
         <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
 
-        {/* Dashed polylines at the bottom layer */}
-        {mappedCars.map((car) => (
-          <Polyline
-            key={`line-${car.id}`}
-            positions={[car.coords, DESTINATION]}
-            pathOptions={{
-              color: car.color,
-              weight: 2.5,
-              dashArray: "8 8",
-              opacity: 0.75,
-            }}
-          />
-        ))}
+        {/* Dashed polylines routed through stops */}
+        {mappedCars.map((car) => {
+          const validStops = (car.stopCoords ?? []).filter(Boolean) as [number, number][];
+          const routePoints: [number, number][] = [car.coords, ...validStops, DESTINATION];
+          return (
+            <Polyline
+              key={`line-${car.id}`}
+              positions={routePoints}
+              pathOptions={{
+                color: car.color,
+                weight: 2.5,
+                dashArray: "8 8",
+                opacity: 0.75,
+              }}
+            />
+          );
+        })}
+
+        {/* Stop markers */}
+        {mappedCars.map((car) =>
+          (car.stopCoords ?? []).map((coords, i) =>
+            coords ? (
+              <CircleMarker
+                key={`stop-${car.id}-${i}`}
+                center={coords}
+                radius={8}
+                pathOptions={{
+                  fillColor: car.color,
+                  fillOpacity: 0.7,
+                  color: "white",
+                  weight: 2,
+                }}
+              >
+                <Tooltip direction="top">
+                  🛑 Arrêt {i + 1}: {car.stops[i]}
+                </Tooltip>
+              </CircleMarker>
+            ) : null
+          )
+        )}
 
         {/* Destination flower marker */}
         <Marker position={DESTINATION} icon={flowerIcon} zIndexOffset={1000}>

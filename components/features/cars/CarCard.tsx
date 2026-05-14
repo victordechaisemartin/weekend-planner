@@ -18,7 +18,7 @@ type Props = {
   onJoin: (carId: string) => void;
   onLeave: (carId: string) => void;
   onRemovePassenger: (carId: string, passengerId: string) => void;
-  onEdit: (carId: string, form: { address: string; date: string; time: string; seats: number }) => Promise<void>;
+  onEdit: (carId: string, form: { address: string; date: string; time: string; seats: number; note: string | null; stops: string[] }) => Promise<void>;
   onDelete: (carId: string) => Promise<void>;
   busy: boolean;
 };
@@ -51,6 +51,8 @@ export default function CarCard({ car, currentUserId, onJoin, onLeave, onRemoveP
   const [editDate,     setEditDate]     = useState("");
   const [editTime,     setEditTime]     = useState("");
   const [editSeats,    setEditSeats]    = useState(car.seats_total);
+  const [editNote,     setEditNote]     = useState<string>("");
+  const [editStops,    setEditStops]    = useState<string[]>([]);
   const [editSaving,   setEditSaving]   = useState(false);
 
   // ── delete state ──────────────────────────────────────────────
@@ -63,12 +65,21 @@ export default function CarCard({ car, currentUserId, onJoin, onLeave, onRemoveP
     setEditDate(dt.toISOString().slice(0, 10));
     setEditTime(dt.toTimeString().slice(0, 5));
     setEditSeats(car.seats_total);
+    setEditNote(car.note ?? "");
+    setEditStops(car.stops ?? []);
     setEditing(true);
+  }
+
+  function addEditStop() { if (editStops.length < 5) setEditStops([...editStops, ""]); }
+  function removeEditStop(i: number) { setEditStops(editStops.filter((_, idx) => idx !== i)); }
+  function updateEditStop(i: number, val: string) {
+    const updated = [...editStops]; updated[i] = val; setEditStops(updated);
   }
 
   async function submitEdit() {
     setEditSaving(true);
-    await onEdit(car.id, { address: editAddress, date: editDate, time: editTime, seats: editSeats });
+    const cleanStops = editStops.filter((s) => s.trim() !== "");
+    await onEdit(car.id, { address: editAddress, date: editDate, time: editTime, seats: editSeats, note: editNote.trim() || null, stops: cleanStops });
     setEditSaving(false);
     setEditing(false);
   }
@@ -129,6 +140,28 @@ export default function CarCard({ car, currentUserId, onJoin, onLeave, onRemoveP
             <span className="mt-px shrink-0">📍</span>
             <span>{car.address}</span>
           </p>
+
+          {/* ── Stops ── */}
+          {car.stops && car.stops.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-charcoal/40">
+                Arrêts
+              </p>
+              {car.stops.map((stop, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="text-xs text-charcoal/40">{i + 1}.</span>
+                  <span className="text-sm text-charcoal/70">{stop}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Note ── */}
+          {car.note && (
+            <div className="px-3 py-2 bg-lavender/20 rounded-xl">
+              <p className="text-xs text-charcoal/60 italic">💬 {car.note}</p>
+            </div>
+          )}
 
           {/* ── Departure ── */}
           <p className="text-sm text-charcoal/60 flex gap-1.5 items-center">
@@ -305,6 +338,58 @@ export default function CarCard({ car, currentUserId, onJoin, onLeave, onRemoveP
                   />
                 </div>
               </div>
+              {/* Stops */}
+              <div>
+                <label className={labelCls}>Arrêts en route</label>
+                <div className="space-y-2">
+                  {editStops.map((stop, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={stop}
+                        onChange={(e) => updateEditStop(i, e.target.value)}
+                        placeholder="Ex: Gare de Lyon, Paris"
+                        className={`${inputCls} flex-1`}
+                        style={{ fontSize: 16 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeEditStop(i)}
+                        className="w-8 h-8 rounded-full bg-white/80 flex items-center justify-center text-charcoal/40 hover:text-pink/70 transition-colors shrink-0"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {editStops.length < 5 ? (
+                  <button
+                    type="button"
+                    onClick={addEditStop}
+                    className="mt-2 rounded-full border border-pink/40 px-4 py-1.5 text-xs font-semibold text-pink/70 hover:bg-pink/10 transition-colors"
+                  >
+                    + Ajouter un arrêt
+                  </button>
+                ) : (
+                  <p className="mt-2 text-xs text-charcoal/40">Maximum 5 arrêts atteint</p>
+                )}
+              </div>
+
+              {/* Note */}
+              <div>
+                <label className={labelCls}>Note (optionnel)</label>
+                <textarea
+                  value={editNote}
+                  onChange={(e) => setEditNote(e.target.value)}
+                  placeholder="Ex: Je passe par Paris 🌸"
+                  rows={2}
+                  maxLength={200}
+                  className={`${inputCls} resize-none`}
+                  style={{ fontSize: 16 }}
+                />
+                <p className="mt-1 text-xs text-charcoal/30 text-right">{editNote.length} / 200</p>
+              </div>
+
               <PastelButton
                 variant="lavender"
                 fullWidth
