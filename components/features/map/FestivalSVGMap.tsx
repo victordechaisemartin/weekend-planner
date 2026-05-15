@@ -151,7 +151,7 @@ export default function FestivalSVGMap() {
   const [currentScale, setCurrentScale] = useState(1);
 
   return (
-    <div className="relative w-full h-full bg-[#FFF8F0]">
+    <div className="relative w-full bg-[#FFF8F0]">
       <TransformWrapper
         initialScale={1}
         minScale={0.8}
@@ -165,52 +165,41 @@ export default function FestivalSVGMap() {
         {({ zoomIn, zoomOut, resetTransform }) => (
           <>
             <TransformComponent
-              wrapperStyle={{ width: "100%", height: "100%" }}
-              contentStyle={{ width: "100%", height: "100%" }}
+              wrapperStyle={{ width: "100%" }}
+              contentStyle={{ width: "100%" }}
             >
-              <div style={{ position: "relative" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/map-lola.png"
-                  alt="Festival Map"
-                  style={{ width: "100%", height: "auto", display: "block" }}
-                  draggable={false}
+              {/*
+                Single SVG containing both the map image and all pins.
+                One coordinate system (0 0 9355 6616) shared by everything —
+                perfect alignment on every screen size and device pixel ratio.
+              */}
+              <svg
+                viewBox="0 0 9355 6616"
+                xmlns="http://www.w3.org/2000/svg"
+                style={{
+                  width:       "100%",
+                  height:      "auto",
+                  display:     "block",
+                  touchAction: "none",
+                }}
+              >
+                <image
+                  href="/map-lola.png"
+                  x={0}
+                  y={0}
+                  width={9355}
+                  height={6616}
+                  preserveAspectRatio="xMidYMid meet"
                 />
 
-                {/*
-                  preserveAspectRatio="none" makes 1 SVG unit = 1 image pixel
-                  on every screen size — pin positions are drift-free.
-                */}
-                <svg
-                  viewBox="0 0 9355 6616"
-                  preserveAspectRatio="none"
-                  style={{
-                    position:      "absolute",
-                    top:           0,
-                    left:          0,
-                    width:         "100%",
-                    height:        "100%",
-                    overflow:      "visible",
-                    pointerEvents: "none",
-                  }}
-                >
-                  {/* DEBUG — remove after diagnosis */}
-                  <circle cx={100}  cy={100}  r={150} fill="red"    opacity={0.8} />
-                  <circle cx={9255} cy={100}  r={150} fill="blue"   opacity={0.8} />
-                  <circle cx={100}  cy={6516} r={150} fill="green"  opacity={0.8} />
-                  <circle cx={9255} cy={6516} r={150} fill="orange" opacity={0.8} />
-                  <circle cx={4677} cy={3308} r={150} fill="purple" opacity={0.8} />
-                  {/* END DEBUG */}
-
-                  {PINS.map((pin) => (
-                    <PinGroup
-                      key={pin.name}
-                      pin={pin}
-                      scale={currentScale}
-                    />
-                  ))}
-                </svg>
-              </div>
+                {PINS.map((pin) => (
+                  <PinGroup
+                    key={pin.name}
+                    pin={pin}
+                    scale={currentScale}
+                  />
+                ))}
+              </svg>
             </TransformComponent>
 
             {/* Zoom controls — outside TransformComponent so they don't pan */}
