@@ -129,6 +129,14 @@ export default function CarsClient() {
   const [bikeNote, setBikeNote] = useState("");
   const [bikeAddError, setBikeAddError] = useState<string | null>(null);
   const [bikeAdding, setBikeAdding] = useState(false);
+  const [editingBike, setEditingBike] = useState<Bike | null>(null);
+  const [bikeEditAddress, setBikeEditAddress] = useState("");
+  const [bikeEditDate, setBikeEditDate] = useState("");
+  const [bikeEditTime, setBikeEditTime] = useState("09:00");
+  const [bikeEditModel, setBikeEditModel] = useState("");
+  const [bikeEditNote, setBikeEditNote] = useState("");
+  const [bikeEditError, setBikeEditError] = useState<string | null>(null);
+  const [bikeEditing, setBikeEditing] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [joinToast, setJoinToast] = useState(false);
   const [editToast, setEditToast] = useState(false);
@@ -325,6 +333,52 @@ export default function CarsClient() {
     setBikeAddError(null);
   }
 
+  function openEditBike(bike: Bike) {
+    setBikeEditAddress(bike.departure_address ?? "");
+    if (bike.departure_datetime) {
+      const d = new Date(bike.departure_datetime);
+      setBikeEditDate(d.toISOString().slice(0, 10));
+      setBikeEditTime(d.toTimeString().slice(0, 5));
+    } else {
+      setBikeEditDate("");
+      setBikeEditTime("09:00");
+    }
+    setBikeEditModel(bike.bike_model ?? "");
+    setBikeEditNote(bike.note ?? "");
+    setBikeEditError(null);
+    setEditingBike(bike);
+  }
+
+  async function handleEditBike() {
+    if (!editingBike) return;
+    setBikeEditError(null);
+    setBikeEditing(true);
+
+    const departure_datetime =
+      bikeEditDate && bikeEditTime
+        ? new Date(`${bikeEditDate}T${bikeEditTime}`).toISOString()
+        : null;
+
+    const { error } = await supabase
+      .from("bikes")
+      .update({
+        departure_address: bikeEditAddress.trim() || null,
+        departure_datetime,
+        bike_model: bikeEditModel.trim() || null,
+        note: bikeEditNote.trim() || null,
+      })
+      .eq("id", editingBike.id);
+
+    setBikeEditing(false);
+
+    if (error) {
+      setBikeEditError(error.message);
+      return;
+    }
+    setEditingBike(null);
+    await refresh();
+  }
+
   // ── derived stats ──────────────────────────────────────────
 
   const totalFreeSeats = cars.reduce(
@@ -459,14 +513,26 @@ export default function CarsClient() {
                 )}
               </div>
               {bike.rider_id === currentUserId && (
-                <button
-                  type="button"
-                  onClick={() => handleRemoveBike(bike.id)}
-                  title="Supprimer mon vélo"
-                  className="w-7 h-7 rounded-full bg-charcoal/6 flex items-center justify-center text-sm text-charcoal/50 hover:bg-pink/20 hover:text-pink/80 transition-colors shrink-0"
-                >
-                  🗑️
-                </button>
+                <div className="flex gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => openEditBike(bike)}
+                    title="Modifier mon vélo"
+                    className="w-7 h-7 rounded-full bg-charcoal/6 flex items-center justify-center text-sm text-charcoal/50 hover:bg-lavender/20 hover:text-lavender transition-colors"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm("Supprimer ton vélo ?")) handleRemoveBike(bike.id);
+                    }}
+                    title="Supprimer mon vélo"
+                    className="w-7 h-7 rounded-full bg-charcoal/6 flex items-center justify-center text-sm text-charcoal/50 hover:bg-pink/20 hover:text-pink/80 transition-colors"
+                  >
+                    🗑️
+                  </button>
+                </div>
               )}
             </div>
           ))}
@@ -594,6 +660,98 @@ export default function CarsClient() {
                 onClick={handleAddBike}
               >
                 {bikeAdding ? "En route…" : "C'est parti 🚲"}
+              </PastelButton>
+            </div>
+          </div>
+        </div>
+      )}
+      {editingBike && (
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
+          <div
+            className="absolute inset-0 bg-charcoal/30 backdrop-blur-sm"
+            onClick={() => setEditingBike(null)}
+          />
+          <div className="relative w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-cream px-6 pt-5 pb-8 space-y-5 z-[61] max-h-[90vh] overflow-y-auto">
+            <div className="w-10 h-1 rounded-full bg-charcoal/15 mx-auto sm:hidden" />
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-charcoal">Modifier mon vélo ✏️</h2>
+              <button
+                onClick={() => setEditingBike(null)}
+                className="w-8 h-8 rounded-full bg-charcoal/8 flex items-center justify-center text-charcoal/50 hover:bg-charcoal/12 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className={labelCls}>Adresse de départ</label>
+                <input
+                  type="text"
+                  value={bikeEditAddress}
+                  onChange={(e) => setBikeEditAddress(e.target.value)}
+                  placeholder="Ex: 10 rue de Rivoli, Paris"
+                  className={inputCls}
+                  style={{ fontSize: 16 }}
+                />
+              </div>
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-widest text-charcoal/40 mb-2">
+                  Date et heure de départ
+                </p>
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <input
+                      type="date"
+                      value={bikeEditDate}
+                      onChange={(e) => setBikeEditDate(e.target.value)}
+                      className={inputCls}
+                      style={{ fontSize: 16 }}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="time"
+                      value={bikeEditTime}
+                      onChange={(e) => setBikeEditTime(e.target.value)}
+                      className={inputCls}
+                      style={{ fontSize: 16 }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>Marque du vélo</label>
+                <input
+                  type="text"
+                  value={bikeEditModel}
+                  onChange={(e) => setBikeEditModel(e.target.value)}
+                  placeholder="Trek, Specialized…"
+                  className={inputCls}
+                  style={{ fontSize: 16 }}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Note (optionnel)</label>
+                <textarea
+                  value={bikeEditNote}
+                  onChange={(e) => setBikeEditNote(e.target.value)}
+                  rows={2}
+                  maxLength={200}
+                  className={`${inputCls} resize-none`}
+                  style={{ fontSize: 16 }}
+                />
+                <p className="mt-1 text-xs text-charcoal/30 text-right">{bikeEditNote.length} / 200</p>
+              </div>
+              {bikeEditError && (
+                <p className="text-xs text-pink/80 font-semibold text-center">{bikeEditError}</p>
+              )}
+              <PastelButton
+                variant="lavender"
+                fullWidth
+                disabled={bikeEditing}
+                onClick={handleEditBike}
+              >
+                {bikeEditing ? "Enregistrement…" : "Enregistrer 🌸"}
               </PastelButton>
             </div>
           </div>
