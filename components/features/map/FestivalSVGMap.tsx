@@ -38,10 +38,10 @@ function LabelPill({ name, color, yOffset }: {
   color:   string;
   yOffset: number;
 }) {
-  const charWidth = 85;
-  const pillW     = name.length * charWidth + 80;
-  const pillH     = 120;
-  const pillR     = 60;
+  const charWidth = 100;
+  const pillW     = name.length * charWidth + 100;
+  const pillH     = 150;
+  const pillR     = 75;
 
   return (
     <g transform={`translate(0, ${yOffset})`}>
@@ -61,7 +61,7 @@ function LabelPill({ name, color, yOffset }: {
         y={pillH / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fontSize={72}
+        fontSize={90}
         fontWeight="700"
         fill="white"
         style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}
@@ -75,7 +75,7 @@ function LabelPill({ name, color, yOffset }: {
 // ── PinGroup ──────────────────────────────────────────────────
 
 function PinGroup({ pin, scale }: { pin: Pin; scale: number }) {
-  const ICON_SIZE = 280;
+  const ICON_SIZE = 420;
   const isStage   = pin.name === "Yves Stage";
 
   return (
@@ -151,7 +151,15 @@ export default function FestivalSVGMap() {
   const [currentScale, setCurrentScale] = useState(1);
 
   return (
-    <div className="relative w-full bg-[#FFF8F0]">
+    <div
+      className="relative w-full bg-[#FFF8F0]"
+      style={{
+        willChange:               "transform",
+        transform:                "translateZ(0)",
+        backfaceVisibility:       "hidden",
+        WebkitBackfaceVisibility: "hidden",
+      }}
+    >
       <TransformWrapper
         initialScale={1}
         minScale={0.8}
@@ -161,6 +169,11 @@ export default function FestivalSVGMap() {
         pinch={{ disabled: false }}
         doubleClick={{ disabled: false }}
         onTransform={(_, state) => setCurrentScale(state.scale)}
+        smooth={false}
+        velocityAnimation={{
+          animationTime: 0,
+          animationType: "linear",
+        }}
       >
         {({ zoomIn, zoomOut, resetTransform }) => (
           <>
@@ -181,6 +194,8 @@ export default function FestivalSVGMap() {
                   height:      "auto",
                   display:     "block",
                   touchAction: "none",
+                  willChange:  "transform",
+                  transform:   "translateZ(0)",
                 }}
               >
                 <image
@@ -190,6 +205,7 @@ export default function FestivalSVGMap() {
                   width={9355}
                   height={6616}
                   preserveAspectRatio="xMidYMid meet"
+                  style={{ imageRendering: "auto" }}
                 />
 
                 {PINS.map((pin) => (
