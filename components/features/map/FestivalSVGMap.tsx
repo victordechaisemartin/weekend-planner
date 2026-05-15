@@ -194,6 +194,14 @@ export default function FestivalSVGMap() {
                     pointerEvents: "none",
                   }}
                 >
+                  {/* DEBUG — remove after diagnosis */}
+                  <circle cx={100}  cy={100}  r={150} fill="red"    opacity={0.8} />
+                  <circle cx={9255} cy={100}  r={150} fill="blue"   opacity={0.8} />
+                  <circle cx={100}  cy={6516} r={150} fill="green"  opacity={0.8} />
+                  <circle cx={9255} cy={6516} r={150} fill="orange" opacity={0.8} />
+                  <circle cx={4677} cy={3308} r={150} fill="purple" opacity={0.8} />
+                  {/* END DEBUG */}
+
                   {PINS.map((pin) => (
                     <PinGroup
                       key={pin.name}
