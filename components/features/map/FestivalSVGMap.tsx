@@ -19,16 +19,16 @@ type Pin = {
 const PINS: Pin[] = [
   { name: "Entrée 1",       x: 1403, y: 1456, emoji: "🌸",  labelColor: "#F4A7B9" },
   { name: "Entrée 2",       x: 8981, y: 2382, emoji: "🌸",  labelColor: "#F4A7B9" },
-  { name: "Maison d'Yves",  x: 2526, y: 2646, icon: "/icons/house.png",        labelColor: "#F4A7B9" },
-  { name: "Maison Titanic", x: 3555, y: 3771, icon: "/icons/house.png",        labelColor: "#C9B8E8" },
-  { name: "Yves Stage",     x: 3555, y: 3242, icon: "/icons/stage.png",        labelColor: "#F4A7B9" },
-  { name: "Camping",        x: 4210, y: 3308, icon: "/icons/tent.png",         labelColor: "#8FBC5A" },
-  { name: "Grange",         x: 6736, y: 3308, icon: "/icons/barn.png",         labelColor: "#D4A574" },
-  { name: "Maison Rouge",   x: 8139, y: 2911, icon: "/icons/house.png",        labelColor: "#FF6B6B" },
-  { name: "Étang 2 îlots",  x: 7671, y: 3308, emoji: "🏝️", labelColor: "#7EC8E3" },
-  { name: "Tennis",         x: 7578, y: 3970, icon: "/icons/tennis-court.png", labelColor: "#8FBC5A" },
-  { name: "Cabane",         x: 6081, y: 1786, icon: "/icons/treehouse.png",    labelColor: "#D4A574" },
-  { name: "Rambouboat",     x: 2900, y: 3176, emoji: "🎣",  labelColor: "#7EC8E3" },
+  { name: "Maison d'Yves",  x: 2526, y: 2846, emoji: "🏠",  labelColor: "#F4A7B9" },
+  { name: "Maison Titanic", x: 3555, y: 3971, emoji: "🏠",  labelColor: "#C9B8E8" },
+  { name: "Yves Stage",     x: 3555, y: 3442, emoji: "🎤",  labelColor: "#F4A7B9" },
+  { name: "Camping",        x: 4210, y: 3508, emoji: "🏕️",  labelColor: "#8FBC5A" },
+  { name: "Grange",         x: 6736, y: 3508, emoji: "🚜", labelColor: "#D4A574" },
+  { name: "Maison Rouge",   x: 8139, y: 3111, emoji: "🏠", labelColor: "#FF6B6B" },
+  { name: "Étang 2 îlots",  x: 7671, y: 3508, emoji: "🎣", labelColor: "#7EC8E3" },
+  { name: "Tennis",         x: 7578, y: 4170, emoji: "🎾", labelColor: "#8FBC5A" },
+  { name: "Cabane",         x: 6081, y: 1986, emoji: "🛖", labelColor: "#D4A574" },
+  { name: "Rambouboat",     x: 2900, y: 3376, emoji: "🎣",  labelColor: "#7EC8E3" },
 ];
 
 // ── LabelPill ─────────────────────────────────────────────────
