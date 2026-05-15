@@ -122,6 +122,7 @@ async function fetchCars(eventId: string): Promise<CarInfo[]> {
 
 export default function MapClient() {
   const [mappedCars, setMappedCars] = useState<MappedCar[]>([]);
+  const [bikeCount, setBikeCount] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [eventId, setEventId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -137,7 +138,11 @@ export default function MapClient() {
       if (!event?.id) return;
       setEventId(event.id);
 
-      const cars = await fetchCars(event.id);
+      const [cars, { data: bikesData }] = await Promise.all([
+        fetchCars(event.id),
+        supabase.from("bikes").select("id").eq("event_id", event.id),
+      ]);
+      setBikeCount(bikesData?.length ?? 0);
 
       // Geocode start address + all stops in parallel; skip failures
       const results = await Promise.allSettled(
@@ -184,7 +189,7 @@ export default function MapClient() {
   }
 
   return (
-    <>
+    <div className="relative w-full h-full">
       {/* Leaflet popup / tooltip overrides */}
       <style>{`
         .leaflet-popup-content-wrapper {
@@ -371,6 +376,14 @@ export default function MapClient() {
           );
         })}
       </MapContainer>
-    </>
+
+      {bikeCount > 0 && (
+        <div className="absolute top-4 left-4 z-[400] pointer-events-none">
+          <div className="bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 shadow-md border border-lavender/30 text-sm font-semibold text-charcoal/70 whitespace-nowrap">
+            🚲 {bikeCount} cycliste{bikeCount !== 1 ? "s" : ""} rejoignent le festival
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

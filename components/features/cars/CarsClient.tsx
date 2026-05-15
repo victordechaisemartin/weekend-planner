@@ -9,6 +9,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import PastelButton from "@/components/ui/PastelButton";
 import CarCard, { type CarData } from "./CarCard";
 import AddCarModal from "./AddCarModal";
+import type { Bike } from "@/lib/types";
 
 // ── types ─────────────────────────────────────────────────────
 
@@ -62,6 +63,19 @@ async function loadCars(): Promise<CarData[]> {
   }));
 }
 
+async function loadBikes(): Promise<Bike[]> {
+  const eventId = await getEventId();
+  if (!eventId) return [];
+
+  const { data } = await supabase
+    .from("bikes")
+    .select(`*, rider:users!rider_id(id, name)`)
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: true });
+
+  return (data ?? []) as Bike[];
+}
+
 // ── component ─────────────────────────────────────────────────
 
 export default function CarsClient() {
@@ -71,9 +85,12 @@ export default function CarsClient() {
   const currentUserId = user?.id ?? null;
 
   const [cars, setCars] = useState<CarData[]>([]);
+  const [bikes, setBikes] = useState<Bike[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showBikeModal, setShowBikeModal] = useState(false);
+  const [bikeNote, setBikeNote] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
   const [joinToast, setJoinToast] = useState(false);
   const [editToast, setEditToast] = useState(false);
@@ -81,15 +98,17 @@ export default function CarsClient() {
   // Fires immediately — Supabase client uses the stored token without waiting
   // for onAuthStateChange to propagate through React state.
   useEffect(() => {
-    loadCars().then((data) => {
-      setCars(data);
+    Promise.all([loadCars(), loadBikes()]).then(([carsData, bikesData]) => {
+      setCars(carsData);
+      setBikes(bikesData);
       setLoading(false);
     });
   }, []);
 
   const refresh = useCallback(async () => {
-    const data = await loadCars();
-    setCars(data);
+    const [carsData, bikesData] = await Promise.all([loadCars(), loadBikes()]);
+    setCars(carsData);
+    setBikes(bikesData);
   }, []);
 
   async function handleJoin(carId: string) {
@@ -211,12 +230,41 @@ export default function CarsClient() {
     await refresh();
   }
 
+  async function handleAddBike() {
+    const userId = currentUserId
+      ?? (await supabase.auth.getSession()).data.session?.user?.id
+      ?? null;
+    if (!userId) return;
+    const eventId = await getEventId();
+    if (!eventId) return;
+
+    const { error } = await supabase.from("bikes").insert({
+      event_id: eventId,
+      rider_id: userId,
+      note: bikeNote.trim() || null,
+    });
+
+    if (error) {
+      console.error("add bike error:", error);
+      return;
+    }
+    setShowBikeModal(false);
+    setBikeNote("");
+    await refresh();
+  }
+
+  async function handleRemoveBike(bikeId: string) {
+    await supabase.from("bikes").delete().eq("id", bikeId);
+    await refresh();
+  }
+
   // ── derived stats ──────────────────────────────────────────
 
   const totalFreeSeats = cars.reduce(
     (sum, car) => sum + Math.max(0, car.seats_total - car.passengers.length),
     0
   );
+  const myBike = bikes.find((b) => b.rider_id === currentUserId);
 
   // ── render ─────────────────────────────────────────────────
 
@@ -298,6 +346,56 @@ export default function CarsClient() {
           ))
         )}
 
+        {/* ── Bikes section ── */}
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-charcoal/70">🚲 Cyclistes</span>
+            {bikes.length > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-lavender/40 bg-lavender/25 px-3 py-1 text-xs font-semibold text-[#7c6db8]">
+                {bikes.length} cycliste{bikes.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+
+          {bikes.map((bike) => (
+            <div
+              key={bike.id}
+              className="rounded-3xl bg-cream border border-white/60 shadow-[0_2px_16px_0_rgba(45,45,45,0.07)] border-l-4 border-l-lavender p-4 flex items-start justify-between gap-2"
+            >
+              <div className="space-y-1 min-w-0">
+                <p className="text-sm font-bold text-charcoal">🚲 {bike.rider?.name ?? "Cycliste"}</p>
+                {bike.note && (
+                  <p className="text-xs text-charcoal/50 italic">{bike.note}</p>
+                )}
+              </div>
+              {bike.rider_id === currentUserId && (
+                <button
+                  type="button"
+                  onClick={() => handleRemoveBike(bike.id)}
+                  title="Supprimer mon vélo"
+                  className="w-7 h-7 rounded-full bg-charcoal/6 flex items-center justify-center text-sm text-charcoal/50 hover:bg-pink/20 hover:text-pink/80 transition-colors shrink-0"
+                >
+                  🗑️
+                </button>
+              )}
+            </div>
+          ))}
+
+          {myBike ? (
+            <p className="text-[11px] font-semibold text-charcoal/35 uppercase tracking-wider px-1">
+              Mon vélo 🚲
+            </p>
+          ) : (
+            <PastelButton
+              variant="lavender"
+              fullWidth
+              onClick={() => setShowBikeModal(true)}
+            >
+              + Ajouter mon vélo 🚲
+            </PastelButton>
+          )}
+        </div>
+
         {/* Add car button */}
         <PastelButton
           variant="pink"
@@ -315,6 +413,47 @@ export default function CarsClient() {
           onClose={() => { setShowModal(false); setAddError(null); }}
           onSubmit={handleAddCar}
         />
+      )}
+
+      {showBikeModal && (
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
+          <div
+            className="absolute inset-0 bg-charcoal/30 backdrop-blur-sm"
+            onClick={() => setShowBikeModal(false)}
+          />
+          <div className="relative w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-cream px-6 pt-5 pb-8 space-y-5 z-[61]">
+            <div className="w-10 h-1 rounded-full bg-charcoal/15 mx-auto sm:hidden" />
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-charcoal">Ajouter mon vélo 🚲</h2>
+              <button
+                onClick={() => setShowBikeModal(false)}
+                className="w-8 h-8 rounded-full bg-charcoal/8 flex items-center justify-center text-charcoal/50 hover:bg-charcoal/12 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-widest text-charcoal/40 mb-1.5">
+                  Note (optionnel)
+                </label>
+                <textarea
+                  value={bikeNote}
+                  onChange={(e) => setBikeNote(e.target.value)}
+                  placeholder="Tu veux préciser quelque chose ? Ex: J'arrive vendredi soir 🚲"
+                  rows={3}
+                  maxLength={200}
+                  className="w-full rounded-2xl bg-white/80 border border-white px-4 py-2.5 text-sm text-charcoal placeholder:text-charcoal/25 focus:outline-none focus:ring-2 focus:ring-lavender/40 resize-none"
+                  style={{ fontSize: 16 }}
+                />
+                <p className="mt-1 text-xs text-charcoal/30 text-right">{bikeNote.length} / 200</p>
+              </div>
+              <PastelButton variant="lavender" fullWidth onClick={handleAddBike}>
+                C&apos;est parti 🚲
+              </PastelButton>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

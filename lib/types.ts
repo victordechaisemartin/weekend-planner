@@ -71,6 +71,15 @@ export type DJ = {
   revealed: boolean;
 };
 
+export type Bike = {
+  id: string
+  event_id: string
+  rider_id: string
+  note?: string | null
+  created_at?: string
+  rider?: { id: string; name: string }
+}
+
 // Joined types used in queries
 export type CarWithDriver = Car & { driver: User };
 export type CarWithPassengers = Car & { passengers: User[] };
