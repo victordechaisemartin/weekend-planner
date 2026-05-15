@@ -62,23 +62,25 @@ export default function AdminPresencePage() {
   const [dietaryOpen, setDietaryOpen] = useState(true);
 
   useEffect(() => {
-    supabase
-      .from("users")
-      .select(`
-        name,
-        dietary,
-        present_fri_evening,
-        present_sat_midday,
-        present_sat_evening,
-        present_sun_midday,
-        present_sun_evening,
-        present_mon_midday
-      `)
-      .order("name", { ascending: true })
-      .then(({ data }) => {
-        setUsers((data ?? []) as PresenceUser[]);
-        setLoading(false);
-      });
+    async function load() {
+      const { data } = await supabase
+        .from("users")
+        .select(`
+          name,
+          dietary,
+          present_fri_evening,
+          present_sat_midday,
+          present_sat_evening,
+          present_sun_midday,
+          present_sun_evening,
+          present_mon_midday
+        `)
+        .order("name", { ascending: true });
+
+      setUsers((data ?? []) as PresenceUser[]);
+      setLoading(false);
+    }
+    load();
   }, []);
 
   function toggleMoment(key: string) {
