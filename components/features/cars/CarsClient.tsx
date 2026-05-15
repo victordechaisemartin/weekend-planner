@@ -76,6 +76,14 @@ async function loadBikes(): Promise<Bike[]> {
   return (data ?? []) as Bike[];
 }
 
+// ── shared modal styles ───────────────────────────────────────
+
+const inputCls =
+  "w-full rounded-2xl bg-white/80 border border-white px-4 py-2.5 text-sm text-charcoal " +
+  "placeholder:text-charcoal/25 focus:outline-none focus:ring-2 focus:ring-lavender/40";
+
+const labelCls = "block text-[11px] font-bold uppercase tracking-widest text-charcoal/40 mb-1.5";
+
 // ── component ─────────────────────────────────────────────────
 
 export default function CarsClient() {
@@ -90,7 +98,11 @@ export default function CarsClient() {
   const [busy, setBusy] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showBikeModal, setShowBikeModal] = useState(false);
+  const [bikeAddress, setBikeAddress] = useState("");
+  const [bikeModel, setBikeModel] = useState("");
   const [bikeNote, setBikeNote] = useState("");
+  const [bikeAddError, setBikeAddError] = useState<string | null>(null);
+  const [bikeAdding, setBikeAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [joinToast, setJoinToast] = useState(false);
   const [editToast, setEditToast] = useState(false);
@@ -231,31 +243,49 @@ export default function CarsClient() {
   }
 
   async function handleAddBike() {
+    setBikeAddError(null);
     const userId = currentUserId
       ?? (await supabase.auth.getSession()).data.session?.user?.id
       ?? null;
-    if (!userId) return;
+    if (!userId) { setBikeAddError("Tu n'es pas connecté·e."); return; }
     const eventId = await getEventId();
-    if (!eventId) return;
+    if (!eventId) { setBikeAddError("Événement introuvable."); return; }
 
+    setBikeAdding(true);
     const { error } = await supabase.from("bikes").insert({
       event_id: eventId,
       rider_id: userId,
+      departure_address: bikeAddress.trim() || null,
+      bike_model: bikeModel.trim() || null,
       note: bikeNote.trim() || null,
     });
+    setBikeAdding(false);
 
     if (error) {
       console.error("add bike error:", error);
+      setBikeAddError(error.message);
       return;
     }
-    setShowBikeModal(false);
-    setBikeNote("");
+    closeBikeModal();
     await refresh();
   }
 
   async function handleRemoveBike(bikeId: string) {
     await supabase.from("bikes").delete().eq("id", bikeId);
     await refresh();
+  }
+
+  function openBikeModal() {
+    setBikeAddress("");
+    setBikeModel("");
+    setBikeNote("");
+    setBikeAddError(null);
+    setShowBikeModal(true);
+  }
+
+  function closeBikeModal() {
+    setShowBikeModal(false);
+    setBikeAddError(null);
   }
 
   // ── derived stats ──────────────────────────────────────────
@@ -363,7 +393,18 @@ export default function CarsClient() {
               className="rounded-3xl bg-cream border border-white/60 shadow-[0_2px_16px_0_rgba(45,45,45,0.07)] border-l-4 border-l-lavender p-4 flex items-start justify-between gap-2"
             >
               <div className="space-y-1 min-w-0">
-                <p className="text-sm font-bold text-charcoal">🚲 {bike.rider?.name ?? "Cycliste"}</p>
+                <p className="text-sm font-bold text-charcoal">
+                  🚲 {bike.rider?.name ?? "Cycliste"}
+                  {bike.bike_model && (
+                    <span className="text-charcoal/40 font-normal"> · {bike.bike_model}</span>
+                  )}
+                </p>
+                {bike.departure_address && (
+                  <p className="text-sm text-charcoal/70 flex gap-1.5 items-start">
+                    <span className="mt-px shrink-0">📍</span>
+                    <span>{bike.departure_address}</span>
+                  </p>
+                )}
                 {bike.note && (
                   <p className="text-xs text-charcoal/50 italic">{bike.note}</p>
                 )}
@@ -389,7 +430,7 @@ export default function CarsClient() {
             <PastelButton
               variant="lavender"
               fullWidth
-              onClick={() => setShowBikeModal(true)}
+              onClick={openBikeModal}
             >
               + Ajouter mon vélo 🚲
             </PastelButton>
@@ -419,14 +460,14 @@ export default function CarsClient() {
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
           <div
             className="absolute inset-0 bg-charcoal/30 backdrop-blur-sm"
-            onClick={() => setShowBikeModal(false)}
+            onClick={closeBikeModal}
           />
-          <div className="relative w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-cream px-6 pt-5 pb-8 space-y-5 z-[61]">
+          <div className="relative w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-cream px-6 pt-5 pb-8 space-y-5 z-[61] max-h-[90vh] overflow-y-auto">
             <div className="w-10 h-1 rounded-full bg-charcoal/15 mx-auto sm:hidden" />
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-charcoal">Ajouter mon vélo 🚲</h2>
               <button
-                onClick={() => setShowBikeModal(false)}
+                onClick={closeBikeModal}
                 className="w-8 h-8 rounded-full bg-charcoal/8 flex items-center justify-center text-charcoal/50 hover:bg-charcoal/12 transition-colors"
               >
                 ✕
@@ -434,22 +475,50 @@ export default function CarsClient() {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-widest text-charcoal/40 mb-1.5">
-                  Note (optionnel)
-                </label>
+                <label className={labelCls}>Adresse de départ</label>
+                <input
+                  type="text"
+                  value={bikeAddress}
+                  onChange={(e) => setBikeAddress(e.target.value)}
+                  placeholder="Ex: 10 rue de Rivoli, Paris"
+                  className={inputCls}
+                  style={{ fontSize: 16 }}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>La marque de ton vélo (juste pour flex)</label>
+                <input
+                  type="text"
+                  value={bikeModel}
+                  onChange={(e) => setBikeModel(e.target.value)}
+                  placeholder="Ex: Trek, Specialized, Canyon…"
+                  className={inputCls}
+                  style={{ fontSize: 16 }}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Note (optionnel)</label>
                 <textarea
                   value={bikeNote}
                   onChange={(e) => setBikeNote(e.target.value)}
                   placeholder="Tu veux préciser quelque chose ? Ex: J'arrive vendredi soir 🚲"
-                  rows={3}
+                  rows={2}
                   maxLength={200}
-                  className="w-full rounded-2xl bg-white/80 border border-white px-4 py-2.5 text-sm text-charcoal placeholder:text-charcoal/25 focus:outline-none focus:ring-2 focus:ring-lavender/40 resize-none"
+                  className={`${inputCls} resize-none`}
                   style={{ fontSize: 16 }}
                 />
                 <p className="mt-1 text-xs text-charcoal/30 text-right">{bikeNote.length} / 200</p>
               </div>
-              <PastelButton variant="lavender" fullWidth onClick={handleAddBike}>
-                C&apos;est parti 🚲
+              {bikeAddError && (
+                <p className="text-xs text-pink/80 font-semibold text-center">{bikeAddError}</p>
+              )}
+              <PastelButton
+                variant="lavender"
+                fullWidth
+                disabled={bikeAdding || !bikeAddress.trim()}
+                onClick={handleAddBike}
+              >
+                {bikeAdding ? "En route…" : "C'est parti 🚲"}
               </PastelButton>
             </div>
           </div>

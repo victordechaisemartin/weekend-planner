@@ -54,6 +54,18 @@ type MappedCar = CarInfo & {
   color: string;
 };
 
+type BikeInfo = {
+  id: string;
+  departure_address: string | null;
+  bike_model: string | null;
+  note: string | null;
+  rider: { id: string; name: string };
+};
+
+type MappedBike = BikeInfo & {
+  coords: [number, number];
+};
+
 // ── helpers ───────────────────────────────────────────────────
 
 function formatDeparture(iso: string) {
@@ -122,6 +134,7 @@ async function fetchCars(eventId: string): Promise<CarInfo[]> {
 
 export default function MapClient() {
   const [mappedCars, setMappedCars] = useState<MappedCar[]>([]);
+  const [mappedBikes, setMappedBikes] = useState<MappedBike[]>([]);
   const [bikeCount, setBikeCount] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [eventId, setEventId] = useState<string | null>(null);
@@ -138,11 +151,31 @@ export default function MapClient() {
       if (!event?.id) return;
       setEventId(event.id);
 
-      const [cars, { data: bikesData }] = await Promise.all([
+      const [cars, { data: rawBikes }] = await Promise.all([
         fetchCars(event.id),
-        supabase.from("bikes").select("id").eq("event_id", event.id),
+        supabase
+          .from("bikes")
+          .select(`*, rider:users!rider_id(id, name)`)
+          .eq("event_id", event.id),
       ]);
-      setBikeCount(bikesData?.length ?? 0);
+      const bikesData = (rawBikes ?? []) as BikeInfo[];
+      setBikeCount(bikesData.length);
+
+      // Geocode bikes that have a departure address
+      const bikeResults = await Promise.allSettled(
+        bikesData
+          .filter((b) => b.departure_address)
+          .map(async (bike): Promise<MappedBike> => {
+            const coords = await geocode(bike.departure_address!);
+            if (!coords) throw new Error("no coords");
+            return { ...bike, coords };
+          })
+      );
+      setMappedBikes(
+        bikeResults
+          .filter((r) => r.status === "fulfilled")
+          .map((r) => (r as PromiseFulfilledResult<MappedBike>).value)
+      );
 
       // Geocode start address + all stops in parallel; skip failures
       const results = await Promise.allSettled(
@@ -269,6 +302,48 @@ export default function MapClient() {
             ) : null
           )
         )}
+
+        {/* Bike markers */}
+        {mappedBikes.map((bike) => (
+          <CircleMarker
+            key={`bike-${bike.id}`}
+            center={bike.coords}
+            radius={12}
+            pathOptions={{
+              fillColor: "#C9B8E8",
+              fillOpacity: 0.92,
+              color: "white",
+              weight: 2.5,
+            }}
+          >
+            <Tooltip permanent direction="top" offset={[0, -14]}>
+              {bike.rider.name} 🚲
+            </Tooltip>
+            <Popup>
+              <div style={{ padding: "14px 18px", minWidth: 190 }}>
+                <p style={{ fontWeight: 800, fontSize: 14, color: "#2D2D2D", margin: "0 0 4px" }}>
+                  🚲 {bike.rider.name}
+                </p>
+                {bike.bike_model && (
+                  <p style={{ fontSize: 11, color: "rgba(45,45,45,0.45)", margin: "0 0 8px", fontWeight: 600 }}>
+                    {bike.bike_model}
+                  </p>
+                )}
+                {bike.departure_address && (
+                  <p style={{ fontSize: 12, color: "rgba(45,45,45,0.6)", margin: "0 0 4px", display: "flex", gap: 5, alignItems: "flex-start" }}>
+                    <span>📍</span>
+                    <span>{bike.departure_address}</span>
+                  </p>
+                )}
+                {bike.note && (
+                  <p style={{ fontSize: 12, color: "rgba(45,45,45,0.6)", margin: "0", fontStyle: "italic" }}>
+                    💬 {bike.note}
+                  </p>
+                )}
+              </div>
+            </Popup>
+          </CircleMarker>
+        ))}
 
         {/* Destination flower marker */}
         <Marker position={DESTINATION} icon={flowerIcon} zIndexOffset={1000}>
