@@ -18,17 +18,17 @@ type Pin = {
 //                   y = Math.round(yPct/100 × 6616)
 const PINS: Pin[] = [
   { name: "Entrée 1",       x: 1403, y: 1456, emoji: "🌸",  labelColor: "#F4A7B9" },
-  { name: "Entrée 2",       x: 8981, y: 2482, emoji: "🌸",  labelColor: "#F4A7B9" },
-  { name: "Maison d'Yves",  x: 2526, y: 3046, emoji: "🏠",  labelColor: "#F4A7B9" },
-  { name: "Maison Titanic", x: 3555, y: 4071, emoji: "🏠",  labelColor: "#C9B8E8" },
-  { name: "Yves Stage",     x: 3555, y: 3642, emoji: "🎤",  labelColor: "#F4A7B9" },
-  { name: "Camping",        x: 4210, y: 3708, emoji: "🏕️",  labelColor: "#8FBC5A" },
-  { name: "Grange",         x: 6736, y: 3708, emoji: "🚜", labelColor: "#D4A574" },
-  { name: "Maison Rouge",   x: 8139, y: 3311, emoji: "🏠", labelColor: "#FF6B6B" },
-  { name: "Étang 2 îlots",  x: 7671, y: 3708, emoji: "🎣", labelColor: "#7EC8E3" },
-  { name: "Tennis",         x: 7578, y: 4370, emoji: "🎾", labelColor: "#8FBC5A" },
+  { name: "Entrée 2",       x: 8981, y: 2582, emoji: "🌸",  labelColor: "#F4A7B9" },
+  { name: "Maison d'Yves",  x: 2526, y: 3146, emoji: "🏠",  labelColor: "#F4A7B9" },
+  { name: "Maison Titanic", x: 3555, y: 4271, emoji: "🏠",  labelColor: "#C9B8E8" },
+  { name: "Yves Stage",     x: 3555, y: 3742, emoji: "🎤",  labelColor: "#F4A7B9" },
+  { name: "Camping",        x: 4210, y: 3808, emoji: "🏕️",  labelColor: "#8FBC5A" },
+  { name: "Grange",         x: 6736, y: 3808, emoji: "🚜", labelColor: "#D4A574" },
+  { name: "Maison Rouge",   x: 8139, y: 3411, emoji: "🏠", labelColor: "#FF6B6B" },
+  { name: "Étang 2 îlots",  x: 7671, y: 3808, emoji: "🎣", labelColor: "#7EC8E3" },
+  { name: "Tennis",         x: 7578, y: 4570, emoji: "🎾", labelColor: "#8FBC5A" },
   { name: "Cabane",         x: 6081, y: 2086, emoji: "🛖", labelColor: "#D4A574" },
-  { name: "Rambouboat",     x: 2900, y: 3576, emoji: "🎣",  labelColor: "#7EC8E3" },
+  { name: "Rambouboat",     x: 2900, y: 3676, emoji: "🎣",  labelColor: "#7EC8E3" },
 ];
 
 // ── LabelPill ─────────────────────────────────────────────────
