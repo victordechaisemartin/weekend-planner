@@ -75,8 +75,10 @@ function LabelPill({ name, color, yOffset }: {
 // ── PinGroup ──────────────────────────────────────────────────
 
 function PinGroup({ pin, scale }: { pin: Pin; scale: number }) {
-  const ICON_SIZE = 420;
-  const isStage   = pin.name === "Yves Stage";
+  const ICON_SIZE    = 420;
+  const RENDER_SCALE = 3;
+  const RENDER_SIZE  = ICON_SIZE * RENDER_SCALE;
+  const isStage      = pin.name === "Yves Stage";
 
   return (
     <g
@@ -110,27 +112,31 @@ function PinGroup({ pin, scale }: { pin: Pin; scale: number }) {
           </circle>
         )}
 
-        {/* Icon (PNG) or emoji */}
+        {/* Icon (PNG) or emoji — rendered at 3× then scaled down for sharpness on zoom */}
         {pin.icon ? (
-          <image
-            href={pin.icon}
-            x={-ICON_SIZE / 2}
-            y={-ICON_SIZE}
-            width={ICON_SIZE}
-            height={ICON_SIZE}
-            style={{ filter: "drop-shadow(0 8px 16px rgba(0,0,0,0.35))" }}
-          />
+          <g transform={`scale(${1 / RENDER_SCALE})`}>
+            <image
+              href={pin.icon}
+              x={-(RENDER_SIZE / 2)}
+              y={-RENDER_SIZE}
+              width={RENDER_SIZE}
+              height={RENDER_SIZE}
+              style={{ imageRendering: "crisp-edges" }}
+            />
+          </g>
         ) : (
-          <text
-            x={0}
-            y={-ICON_SIZE * 0.1}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fontSize={ICON_SIZE * 0.85}
-            style={{ filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.3))" }}
-          >
-            {pin.emoji}
-          </text>
+          <g transform={`scale(${1 / RENDER_SCALE})`}>
+            <text
+              x={0}
+              y={-(RENDER_SIZE * 0.1)}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize={RENDER_SIZE * 0.85}
+              style={{ filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.3))" }}
+            >
+              {pin.emoji}
+            </text>
+          </g>
         )}
 
         {/* Label pill anchored just below the icon */}
@@ -162,18 +168,14 @@ export default function FestivalSVGMap() {
     >
       <TransformWrapper
         initialScale={1}
-        minScale={0.8}
-        maxScale={5}
+        minScale={0.5}
+        maxScale={6}
         centerOnInit={true}
-        wheel={{ disabled: false }}
+        wheel={{ disabled: false, step: 0.1 }}
         pinch={{ disabled: false }}
         doubleClick={{ disabled: false }}
         onTransform={(_, state) => setCurrentScale(state.scale)}
-        smooth={false}
-        velocityAnimation={{
-          animationTime: 0,
-          animationType: "linear",
-        }}
+        panning={{ velocityDisabled: true }}
       >
         {({ zoomIn, zoomOut, resetTransform }) => (
           <>
