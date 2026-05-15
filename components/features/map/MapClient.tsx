@@ -151,15 +151,24 @@ export default function MapClient() {
       if (!event?.id) return;
       setEventId(event.id);
 
-      const [cars, { data: rawBikes }] = await Promise.all([
+      const [cars, { data: rawBikeRows }] = await Promise.all([
         fetchCars(event.id),
-        supabase
-          .from("bikes")
-          .select(`*, rider:users!rider_id(id, name)`)
-          .eq("event_id", event.id),
+        supabase.from("bikes").select("*").eq("event_id", event.id),
       ]);
-      const bikesData = (rawBikes ?? []) as BikeInfo[];
-      setBikeCount(bikesData.length);
+      setBikeCount(rawBikeRows?.length ?? 0);
+
+      // Fetch rider names separately — avoids FK schema-cache dependency
+      const bikeRiderIds = Array.from(
+        new Set((rawBikeRows ?? []).map((b) => b.rider_id))
+      );
+      const { data: bikeRiders } = bikeRiderIds.length
+        ? await supabase.from("users").select("id, name").in("id", bikeRiderIds)
+        : { data: [] as { id: string; name: string }[] };
+
+      const bikesData: BikeInfo[] = (rawBikeRows ?? []).map((b) => ({
+        ...b,
+        rider: (bikeRiders ?? []).find((r) => r.id === b.rider_id) ?? { id: b.rider_id, name: "Cycliste" },
+      }));
 
       // Geocode bikes that have a departure address
       const bikeResults = await Promise.allSettled(

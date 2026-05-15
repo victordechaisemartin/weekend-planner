@@ -68,14 +68,26 @@ async function loadBikes(): Promise<Bike[]> {
   console.log("[bikes] eventId:", eventId);
   if (!eventId) return [];
 
-  const { data, error } = await supabase
+  const { data: rawBikes, error } = await supabase
     .from("bikes")
-    .select(`*, rider:users!rider_id(id, name)`)
+    .select("*")
     .eq("event_id", eventId)
     .order("created_at", { ascending: true });
 
-  console.log("[bikes] fetch:", data?.length ?? 0, "rows — error:", error);
-  return (data ?? []) as Bike[];
+  console.log("[bikes] raw fetch:", rawBikes?.length ?? 0, "rows — error:", error);
+  if (!rawBikes?.length) return [];
+
+  // Fetch rider names separately — avoids FK schema-cache dependency
+  const riderIds = Array.from(new Set(rawBikes.map((b) => b.rider_id)));
+  const { data: riders } = await supabase
+    .from("users")
+    .select("id, name")
+    .in("id", riderIds);
+
+  return rawBikes.map((bike) => ({
+    ...bike,
+    rider: (riders ?? []).find((r) => r.id === bike.rider_id) ?? undefined,
+  })) as Bike[];
 }
 
 function formatDateTime(iso: string) {
