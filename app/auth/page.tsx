@@ -82,12 +82,13 @@ const linkCls = "font-semibold text-pink hover:underline";
 
 // ── page ──────────────────────────────────────────────────────
 
-type Mode = "signin" | "signup" | "reset";
+type Mode = "signin" | "signup" | "forgot" | "reset";
 
 const TITLES: Record<Mode, string> = {
   signin: "Bon retour 🌸",
   signup: "Rejoins Lolapabouillet 🌸",
-  reset:  "Réinitialiser mon mot de passe 🌸",
+  forgot: "Réinitialiser mon mot de passe 🌸",
+  reset:  "Nouveau mot de passe 🌸",
 };
 
 export default function AuthPage() {
@@ -95,11 +96,32 @@ export default function AuthPage() {
   const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
+    // Recovery redirect — skip the logged-in check so we don't bounce the user
+    // away before they can set their new password.
+    if (window.location.hash.includes("type=recovery")) {
+      setCheckingSession(false);
+      return;
+    }
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) router.replace("/announcements");
       else setCheckingSession(false);
     });
   }, [router]);
+
+  // Detect password-reset redirect and switch to the update-password form
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash || !hash.includes("type=recovery")) return;
+
+    setMode("reset");
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        setError("Lien expiré 🌸 Demande un nouveau lien de réinitialisation");
+        setMode("forgot");
+      }
+    });
+  }, []);
 
   // ── state ──────────────────────────────────────────────────
 
@@ -119,6 +141,10 @@ export default function AuthPage() {
   const [beerLevel,    setBeerLevel]   = useState(0);
   const [wineLevel,    setWineLevel]   = useState(0);
   const [spiritsLevel, setSpiritLevel] = useState(0);
+
+  // reset-only
+  const [newPassword,     setNewPassword]     = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   function switchMode(m: Mode) {
     setMode(m);
@@ -201,6 +227,33 @@ export default function AuthPage() {
     router.push("/announcements");
   }
 
+  // ── update password (after reset link) ─────────────────────
+
+  async function handleUpdatePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+
+    if (newPassword.length < 8) {
+      setError("Le mot de passe doit contenir au moins 8 caractères.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("Les mots de passe ne correspondent pas 🌸");
+      return;
+    }
+
+    setLoading(true);
+    const { error: updateErr } = await supabase.auth.updateUser({ password: newPassword });
+    setLoading(false);
+
+    if (updateErr) {
+      setError(updateErr.message);
+      return;
+    }
+
+    router.push("/announcements");
+  }
+
   // ── forgot password ─────────────────────────────────────────
 
   async function handleReset(e: React.FormEvent) {
@@ -210,7 +263,7 @@ export default function AuthPage() {
 
     const { error: resetErr } = await supabase.auth.resetPasswordForEmail(
       email.trim().toLowerCase(),
-      { redirectTo: "https://lolapabouillet.vercel.app/auth/reset" }
+      { redirectTo: `${window.location.origin}/auth` }
     );
 
     setLoading(false);
@@ -313,7 +366,7 @@ export default function AuthPage() {
                 <p className="text-xs text-charcoal/40">
                   <button
                     type="button"
-                    onClick={() => switchMode("reset")}
+                    onClick={() => switchMode("forgot")}
                     className={linkCls}
                   >
                     Mot de passe oublié ?
@@ -437,7 +490,7 @@ export default function AuthPage() {
           )}
 
           {/* ── FORGOT PASSWORD ── */}
-          {mode === "reset" && (
+          {mode === "forgot" && (
             <form onSubmit={handleReset} className="space-y-4">
               {success ? (
                 <div className="space-y-4">
@@ -491,6 +544,45 @@ export default function AuthPage() {
                   </p>
                 </>
               )}
+            </form>
+          )}
+
+          {/* ── RESET PASSWORD (from email link) ── */}
+          {mode === "reset" && (
+            <form onSubmit={handleUpdatePassword} className="space-y-4">
+              <div>
+                <label className={labelCls}>Nouveau mot de passe</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                  minLength={8}
+                  required
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Confirmer le mot de passe</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className={inputCls}
+                />
+              </div>
+              {error && (
+                <p className="text-xs font-medium text-pink">{error}</p>
+              )}
+              <button
+                type="submit"
+                disabled={loading || !newPassword || !confirmPassword}
+                className={submitCls}
+              >
+                {loading ? "Mise à jour…" : "Mettre à jour 🌸"}
+              </button>
             </form>
           )}
 
