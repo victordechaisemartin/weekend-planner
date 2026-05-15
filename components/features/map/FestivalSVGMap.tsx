@@ -1,128 +1,147 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-
-// ── ping animation ────────────────────────────────────────────
-
-const pingKeyframes = `
-  @keyframes ping {
-    0%   { transform: scale(1);   opacity: 0.6; }
-    100% { transform: scale(1.8); opacity: 0;   }
-  }
-`;
-
-// ── mobile offset ─────────────────────────────────────────────
-
-const MOBILE_Y_OFFSET = -10;
 
 // ── types & data ──────────────────────────────────────────────
 
 type Pin = {
   name:       string;
-  xPct:       number;
-  yPct:       number;
+  x:          number;
+  y:          number;
   icon?:      string;
   emoji?:     string;
   labelColor: string;
 };
 
+// Pixel coordinates: x = Math.round(xPct/100 × 9355)
+//                   y = Math.round(yPct/100 × 6616)
 const PINS: Pin[] = [
-  { name: "Entrée 1",      xPct: 15, yPct: 22, emoji: "🌸", labelColor: "#F4A7B9" },
-  { name: "Entrée 2",      xPct: 96, yPct: 36, emoji: "🌸", labelColor: "#F4A7B9" },
-  { name: "Maison d'Yves", xPct: 27, yPct: 40, emoji: "🏠", labelColor: "#F4A7B9" },
-  { name: "Maison Titanic",xPct: 38, yPct: 57, emoji: "🏠", labelColor: "#C9B8E8" },
-  { name: "Yves Stage",    xPct: 38, yPct: 49, emoji: "🎤", labelColor: "#F4A7B9" },
-  { name: "Camping",       xPct: 45, yPct: 50, emoji: "⛺", labelColor: "#8FBC5A" },
-  { name: "Grange",        xPct: 72, yPct: 50, emoji: "🚜", labelColor: "#D4A574" },
-  { name: "Maison Rouge",  xPct: 87, yPct: 44, emoji: "🏠", labelColor: "#FF6B6B" },
-  { name: "Étang 2 îlots", xPct: 82, yPct: 50, emoji: "🐟", labelColor: "#7EC8E3" },
-  { name: "Tennis",        xPct: 81, yPct: 60, emoji: "🎾", labelColor: "#8FBC5A" },
-  { name: "Cabane",        xPct: 65, yPct: 27, emoji: "🛖", labelColor: "#D4A574" },
-  { name: "Rambouboat",    xPct: 32, yPct: 48, emoji: "🐟", labelColor: "#7EC8E3" },
+  { name: "Entrée 1",       x: 1403, y: 1456, emoji: "🌸",  labelColor: "#F4A7B9" },
+  { name: "Entrée 2",       x: 8981, y: 2382, emoji: "🌸",  labelColor: "#F4A7B9" },
+  { name: "Maison d'Yves",  x: 2526, y: 2646, icon: "/icons/house.png",        labelColor: "#F4A7B9" },
+  { name: "Maison Titanic", x: 3555, y: 3771, icon: "/icons/house.png",        labelColor: "#C9B8E8" },
+  { name: "Yves Stage",     x: 3555, y: 3242, icon: "/icons/stage.png",        labelColor: "#F4A7B9" },
+  { name: "Camping",        x: 4210, y: 3308, icon: "/icons/tent.png",         labelColor: "#8FBC5A" },
+  { name: "Grange",         x: 6736, y: 3308, icon: "/icons/barn.png",         labelColor: "#D4A574" },
+  { name: "Maison Rouge",   x: 8139, y: 2911, icon: "/icons/house.png",        labelColor: "#FF6B6B" },
+  { name: "Étang 2 îlots",  x: 7671, y: 3308, emoji: "🏝️", labelColor: "#7EC8E3" },
+  { name: "Tennis",         x: 7578, y: 3970, icon: "/icons/tennis-court.png", labelColor: "#8FBC5A" },
+  { name: "Cabane",         x: 6081, y: 1786, icon: "/icons/treehouse.png",    labelColor: "#D4A574" },
+  { name: "Rambouboat",     x: 2900, y: 3176, emoji: "🎣",  labelColor: "#7EC8E3" },
 ];
 
-// ── MapPin ────────────────────────────────────────────────────
+// ── LabelPill ─────────────────────────────────────────────────
 
-function MapPin({ pin, scale, mobileOffset }: {
-  pin: Pin;
-  scale: number;
-  mobileOffset: number;
+function LabelPill({ name, color, yOffset }: {
+  name:    string;
+  color:   string;
+  yOffset: number;
 }) {
-  const isStage    = pin.name === "Yves Stage";
-  const correctedY = pin.yPct + mobileOffset;
+  const charWidth = 85;
+  const pillW     = name.length * charWidth + 80;
+  const pillH     = 120;
+  const pillR     = 60;
 
   return (
-    <div
-      style={{
-        position:        "absolute",
-        left:            `${pin.xPct}%`,
-        top:             `${correctedY}%`,
-        transform:       `translate(-50%, -100%) scale(${1 / scale}) translateZ(0)`,
-        transformOrigin: "bottom center",
-        willChange:      "transform",
-        display:         "flex",
-        flexDirection:   "column",
-        alignItems:      "center",
-        cursor:          "pointer",
-        zIndex:          10,
-        pointerEvents:   "auto",
-      }}
-    >
-      {/* Pulsing ring — Yves Stage only */}
-      {isStage && (
-        <div style={{
-          position:      "absolute",
-          top:           -4,
-          left:          -4,
-          right:         -4,
-          bottom:        -4,
-          borderRadius:  "50%",
-          border:        "2px solid #F4A7B9",
-          animation:     "ping 2s infinite",
-          opacity:       0.6,
-          pointerEvents: "none",
-        }} />
-      )}
+    <g transform={`translate(0, ${yOffset})`}>
+      <rect
+        x={-pillW / 2}
+        y={0}
+        width={pillW}
+        height={pillH}
+        rx={pillR}
+        ry={pillR}
+        fill={color}
+        opacity={0.92}
+        style={{ filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.25))" }}
+      />
+      <text
+        x={0}
+        y={pillH / 2}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontSize={72}
+        fontWeight="700"
+        fill="white"
+        style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}
+      >
+        {name}
+      </text>
+    </g>
+  );
+}
 
-      {/* Icon or emoji */}
-      <div style={{
-        width:          36,
-        height:         36,
-        display:        "flex",
-        alignItems:     "center",
-        justifyContent: "center",
-      }}>
+// ── PinGroup ──────────────────────────────────────────────────
+
+function PinGroup({ pin, scale }: { pin: Pin; scale: number }) {
+  const ICON_SIZE = 280;
+  const isStage   = pin.name === "Yves Stage";
+
+  return (
+    <g
+      transform={`translate(${pin.x}, ${pin.y})`}
+      style={{ pointerEvents: "auto", cursor: "pointer" }}
+    >
+      {/* Counter-scale: keeps visual size constant while zooming */}
+      <g transform={`scale(${1 / scale})`}>
+
+        {/* Pulsing ring — Yves Stage only */}
+        {isStage && (
+          <circle
+            r={ICON_SIZE * 0.7}
+            fill="none"
+            stroke="#F4A7B9"
+            strokeWidth={40}
+            opacity={0.5}
+          >
+            <animate
+              attributeName="r"
+              values={`${ICON_SIZE * 0.6};${ICON_SIZE * 1.0};${ICON_SIZE * 0.6}`}
+              dur="2s"
+              repeatCount="indefinite"
+            />
+            <animate
+              attributeName="opacity"
+              values="0.5;0;0.5"
+              dur="2s"
+              repeatCount="indefinite"
+            />
+          </circle>
+        )}
+
+        {/* Icon (PNG) or emoji */}
         {pin.icon ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={pin.icon}
-            alt={pin.name}
-            style={{ width: 36, height: 36, objectFit: "contain" }}
-            draggable={false}
+          <image
+            href={pin.icon}
+            x={-ICON_SIZE / 2}
+            y={-ICON_SIZE}
+            width={ICON_SIZE}
+            height={ICON_SIZE}
+            style={{ filter: "drop-shadow(0 8px 16px rgba(0,0,0,0.35))" }}
           />
         ) : (
-          <span style={{ fontSize: 28, lineHeight: 1 }}>{pin.emoji}</span>
+          <text
+            x={0}
+            y={-ICON_SIZE * 0.1}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={ICON_SIZE * 0.85}
+            style={{ filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.3))" }}
+          >
+            {pin.emoji}
+          </text>
         )}
-      </div>
 
-      {/* Label */}
-      <div style={{
-        marginTop:    2,
-        background:   pin.labelColor,
-        color:        "white",
-        fontSize:     9,
-        fontWeight:   700,
-        padding:      "10px 15px",
-        borderRadius: 99,
-        whiteSpace:   "nowrap",
-        textAlign:    "center",
-        boxShadow:    "0 1px 3px rgba(0,0,0,0.3)",
-        textShadow:   "0 1px 2px rgba(0,0,0,0.3)",
-      }}>
-        {pin.name}
-      </div>
-    </div>
+        {/* Label pill anchored just below the icon */}
+        <LabelPill
+          name={pin.name}
+          color={pin.labelColor}
+          yOffset={ICON_SIZE * 0.15}
+        />
+
+      </g>
+    </g>
   );
 }
 
@@ -130,19 +149,9 @@ function MapPin({ pin, scale, mobileOffset }: {
 
 export default function FestivalSVGMap() {
   const [currentScale, setCurrentScale] = useState(1);
-  const [isMobile,     setIsMobile]     = useState(false);
-
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
 
   return (
     <div className="relative w-full h-full bg-[#FFF8F0]">
-      <style>{pingKeyframes}</style>
-
       <TransformWrapper
         initialScale={1}
         minScale={0.8}
@@ -159,40 +168,44 @@ export default function FestivalSVGMap() {
               wrapperStyle={{ width: "100%", height: "100%" }}
               contentStyle={{ width: "100%", height: "100%" }}
             >
-              <div style={{ position: "relative", display: "inline-block", lineHeight: 0 }}>
+              <div style={{ position: "relative" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/map-lola.png"
                   alt="Festival Map"
-                  style={{
-                    width:                    "100%",
-                    height:                   "auto",
-                    display:                  "block",
-                    transform:                "translateZ(0)",
-                    backfaceVisibility:       "hidden",
-                    WebkitBackfaceVisibility: "hidden",
-                  }}
+                  style={{ width: "100%", height: "auto", display: "block" }}
                   draggable={false}
                 />
 
-                <div style={{
-                  position:      "absolute",
-                  inset:         0,
-                  pointerEvents: "none",
-                }}>
+                {/*
+                  preserveAspectRatio="none" makes 1 SVG unit = 1 image pixel
+                  on every screen size — pin positions are drift-free.
+                */}
+                <svg
+                  viewBox="0 0 9355 6616"
+                  preserveAspectRatio="none"
+                  style={{
+                    position:      "absolute",
+                    top:           0,
+                    left:          0,
+                    width:         "100%",
+                    height:        "100%",
+                    overflow:      "visible",
+                    pointerEvents: "none",
+                  }}
+                >
                   {PINS.map((pin) => (
-                    <MapPin
-                      key={pin.name + pin.xPct}
+                    <PinGroup
+                      key={pin.name}
                       pin={pin}
                       scale={currentScale}
-                      mobileOffset={isMobile ? MOBILE_Y_OFFSET : 0}
                     />
                   ))}
-                </div>
+                </svg>
               </div>
             </TransformComponent>
 
-            {/* Zoom controls — outside TransformComponent so they don't move */}
+            {/* Zoom controls — outside TransformComponent so they don't pan */}
             <div className="absolute bottom-4 right-4 flex flex-col gap-2 z-10">
               <button
                 onClick={() => zoomIn()}
