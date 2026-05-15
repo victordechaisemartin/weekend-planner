@@ -75,10 +75,8 @@ function LabelPill({ name, color, yOffset }: {
 // ── PinGroup ──────────────────────────────────────────────────
 
 function PinGroup({ pin, scale }: { pin: Pin; scale: number }) {
-  const ICON_SIZE    = 420;
-  const RENDER_SCALE = 3;
-  const RENDER_SIZE  = ICON_SIZE * RENDER_SCALE;
-  const isStage      = pin.name === "Yves Stage";
+  const ICON_SIZE = 420;
+  const isStage   = pin.name === "Yves Stage";
 
   return (
     <g
@@ -112,31 +110,25 @@ function PinGroup({ pin, scale }: { pin: Pin; scale: number }) {
           </circle>
         )}
 
-        {/* Icon (PNG) or emoji — rendered at 3× then scaled down for sharpness on zoom */}
+        {/* Icon (PNG) or emoji */}
         {pin.icon ? (
-          <g transform={`scale(${1 / RENDER_SCALE})`}>
-            <image
-              href={pin.icon}
-              x={-(RENDER_SIZE / 2)}
-              y={-RENDER_SIZE}
-              width={RENDER_SIZE}
-              height={RENDER_SIZE}
-              style={{ imageRendering: "crisp-edges" }}
-            />
-          </g>
+          <image
+            href={pin.icon}
+            x={-ICON_SIZE / 2}
+            y={-ICON_SIZE}
+            width={ICON_SIZE}
+            height={ICON_SIZE}
+          />
         ) : (
-          <g transform={`scale(${1 / RENDER_SCALE})`}>
-            <text
-              x={0}
-              y={-(RENDER_SIZE * 0.1)}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fontSize={RENDER_SIZE * 0.85}
-              style={{ filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.3))" }}
-            >
-              {pin.emoji}
-            </text>
-          </g>
+          <text
+            x={0}
+            y={-(ICON_SIZE * 0.1)}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={ICON_SIZE * 0.85}
+          >
+            {pin.emoji}
+          </text>
         )}
 
         {/* Label pill anchored just below the icon */}
@@ -157,15 +149,7 @@ export default function FestivalSVGMap() {
   const [currentScale, setCurrentScale] = useState(1);
 
   return (
-    <div
-      className="relative w-full bg-[#FFF8F0]"
-      style={{
-        willChange:               "transform",
-        transform:                "translateZ(0)",
-        backfaceVisibility:       "hidden",
-        WebkitBackfaceVisibility: "hidden",
-      }}
-    >
+    <div className="relative w-full bg-[#FFF8F0]">
       <TransformWrapper
         initialScale={1}
         minScale={0.5}
@@ -196,8 +180,6 @@ export default function FestivalSVGMap() {
                   height:      "auto",
                   display:     "block",
                   touchAction: "none",
-                  willChange:  "transform",
-                  transform:   "translateZ(0)",
                 }}
               >
                 <image
