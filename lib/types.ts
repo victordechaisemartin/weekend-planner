@@ -76,6 +76,7 @@ export type Bike = {
   event_id: string
   rider_id: string
   departure_address?: string | null
+  departure_datetime?: string | null
   bike_model?: string | null
   note?: string | null
   created_at?: string

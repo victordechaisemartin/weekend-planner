@@ -65,15 +65,27 @@ async function loadCars(): Promise<CarData[]> {
 
 async function loadBikes(): Promise<Bike[]> {
   const eventId = await getEventId();
+  console.log("[bikes] eventId:", eventId);
   if (!eventId) return [];
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("bikes")
     .select(`*, rider:users!rider_id(id, name)`)
     .eq("event_id", eventId)
     .order("created_at", { ascending: true });
 
+  console.log("[bikes] fetch:", data?.length ?? 0, "rows — error:", error);
   return (data ?? []) as Bike[];
+}
+
+function formatDateTime(iso: string) {
+  return new Date(iso).toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 // ── shared modal styles ───────────────────────────────────────
@@ -99,6 +111,8 @@ export default function CarsClient() {
   const [showModal, setShowModal] = useState(false);
   const [showBikeModal, setShowBikeModal] = useState(false);
   const [bikeAddress, setBikeAddress] = useState("");
+  const [bikeDate, setBikeDate] = useState("");
+  const [bikeTime, setBikeTime] = useState("09:00");
   const [bikeModel, setBikeModel] = useState("");
   const [bikeNote, setBikeNote] = useState("");
   const [bikeAddError, setBikeAddError] = useState<string | null>(null);
@@ -111,6 +125,7 @@ export default function CarsClient() {
   // for onAuthStateChange to propagate through React state.
   useEffect(() => {
     Promise.all([loadCars(), loadBikes()]).then(([carsData, bikesData]) => {
+      console.log("[init] bikes loaded:", bikesData.length);
       setCars(carsData);
       setBikes(bikesData);
       setLoading(false);
@@ -251,21 +266,29 @@ export default function CarsClient() {
     const eventId = await getEventId();
     if (!eventId) { setBikeAddError("Événement introuvable."); return; }
 
+    const departure_datetime =
+      bikeDate && bikeTime
+        ? new Date(`${bikeDate}T${bikeTime}`).toISOString()
+        : null;
+
     setBikeAdding(true);
+    console.log("[addBike] inserting…", { eventId, userId, departure_datetime });
     const { error } = await supabase.from("bikes").insert({
       event_id: eventId,
       rider_id: userId,
       departure_address: bikeAddress.trim() || null,
+      departure_datetime,
       bike_model: bikeModel.trim() || null,
       note: bikeNote.trim() || null,
     });
     setBikeAdding(false);
 
     if (error) {
-      console.error("add bike error:", error);
+      console.error("[addBike] insert error:", error);
       setBikeAddError(error.message);
       return;
     }
+    console.log("[addBike] success — refreshing bikes…");
     closeBikeModal();
     await refresh();
   }
@@ -277,6 +300,8 @@ export default function CarsClient() {
 
   function openBikeModal() {
     setBikeAddress("");
+    setBikeDate("");
+    setBikeTime("09:00");
     setBikeModel("");
     setBikeNote("");
     setBikeAddError(null);
@@ -387,6 +412,12 @@ export default function CarsClient() {
             )}
           </div>
 
+          {bikes.length === 0 && (
+            <div className="py-4 text-center">
+              <p className="text-sm text-charcoal/40">Pas encore de cyclistes 🚲</p>
+            </div>
+          )}
+
           {bikes.map((bike) => (
             <div
               key={bike.id}
@@ -403,6 +434,12 @@ export default function CarsClient() {
                   <p className="text-sm text-charcoal/70 flex gap-1.5 items-start">
                     <span className="mt-px shrink-0">📍</span>
                     <span>{bike.departure_address}</span>
+                  </p>
+                )}
+                {bike.departure_datetime && (
+                  <p className="text-sm text-charcoal/60 flex gap-1.5 items-center">
+                    <span>⏱️</span>
+                    <span>{formatDateTime(bike.departure_datetime)}</span>
                   </p>
                 )}
                 {bike.note && (
@@ -484,6 +521,32 @@ export default function CarsClient() {
                   className={inputCls}
                   style={{ fontSize: 16 }}
                 />
+              </div>
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-widest text-charcoal/40 mb-2">
+                  Date et heure de départ
+                </p>
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <input
+                      type="date"
+                      value={bikeDate}
+                      onChange={(e) => setBikeDate(e.target.value)}
+                      min={new Date().toISOString().slice(0, 10)}
+                      className={inputCls}
+                      style={{ fontSize: 16 }}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="time"
+                      value={bikeTime}
+                      onChange={(e) => setBikeTime(e.target.value)}
+                      className={inputCls}
+                      style={{ fontSize: 16 }}
+                    />
+                  </div>
+                </div>
               </div>
               <div>
                 <label className={labelCls}>La marque de ton vélo (juste pour flex)</label>
