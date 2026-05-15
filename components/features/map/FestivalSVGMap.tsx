@@ -53,16 +53,18 @@ function LabelPill({ name, color, yOffset }: {
         rx={pillR}
         ry={pillR}
         fill={color}
-        opacity={0.92}
-        style={{ filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.25))" }}
+        opacity={1}
+        stroke="white"
+        strokeWidth={12}
+        style={{ filter: "drop-shadow(0 6px 12px rgba(0,0,0,0.4))" }}
       />
       <text
         x={0}
         y={pillH / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fontSize={120}
-        fontWeight="700"
+        fontSize={140}
+        fontWeight="800"
         fill="white"
         style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}
       >
@@ -120,15 +122,35 @@ function PinGroup({ pin, scale }: { pin: Pin; scale: number }) {
             height={ICON_SIZE}
           />
         ) : (
-          <text
-            x={0}
-            y={-(ICON_SIZE * 0.1)}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fontSize={ICON_SIZE * 0.85}
-          >
-            {pin.emoji}
-          </text>
+          <>
+            {/* White halo behind emoji */}
+            <text
+              x={0}
+              y={-(ICON_SIZE * 0.1)}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize={ICON_SIZE * 0.85}
+              style={{
+                paintOrder:     "stroke",
+                stroke:         "white",
+                strokeWidth:    60,
+                strokeLinejoin: "round",
+                fill:           "transparent",
+              }}
+            >
+              {pin.emoji}
+            </text>
+            {/* Emoji on top */}
+            <text
+              x={0}
+              y={-(ICON_SIZE * 0.1)}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize={ICON_SIZE * 0.85}
+            >
+              {pin.emoji}
+            </text>
+          </>
         )}
 
         {/* Label pill anchored just below the icon */}
@@ -149,7 +171,7 @@ export default function FestivalSVGMap() {
   const [currentScale, setCurrentScale] = useState(1);
 
   return (
-    <div className="relative w-full bg-[#FFF8F0]">
+    <div className="relative w-full overflow-hidden">
       <TransformWrapper
         initialScale={1}
         minScale={0.5}

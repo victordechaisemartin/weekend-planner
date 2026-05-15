@@ -68,14 +68,13 @@ export default function MapPage() {
           </div>
         </div>
       ) : (
-        <div className="flex-1 px-4 pb-20 min-h-0 flex flex-col gap-2">
-          {/* Map — rounded container keeps clipping clean */}
-          <div className="flex-1 rounded-3xl overflow-hidden shadow-[0_2px_20px_0_rgba(45,45,45,0.1)] min-h-0">
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 overflow-hidden min-h-0">
             <FestivalSVGMap />
           </div>
 
-          {/* Download button — outside the clipping container */}
-          <div className="text-center shrink-0">
+          {/* Download button */}
+          <div className="text-center shrink-0 py-2 pb-20">
             <button
               onClick={() => {
                 const a = document.createElement("a");
