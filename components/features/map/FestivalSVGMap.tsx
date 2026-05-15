@@ -38,10 +38,10 @@ function LabelPill({ name, color, yOffset }: {
   color:   string;
   yOffset: number;
 }) {
-  const charWidth = 100;
-  const pillW     = name.length * charWidth + 100;
-  const pillH     = 150;
-  const pillR     = 75;
+  const charWidth = 140;
+  const pillW     = name.length * charWidth + 140;
+  const pillH     = 200;
+  const pillR     = 100;
 
   return (
     <g transform={`translate(0, ${yOffset})`}>
@@ -61,7 +61,7 @@ function LabelPill({ name, color, yOffset }: {
         y={pillH / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fontSize={90}
+        fontSize={120}
         fontWeight="700"
         fill="white"
         style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}
@@ -75,7 +75,7 @@ function LabelPill({ name, color, yOffset }: {
 // ── PinGroup ──────────────────────────────────────────────────
 
 function PinGroup({ pin, scale }: { pin: Pin; scale: number }) {
-  const ICON_SIZE = 420;
+  const ICON_SIZE = 600;
   const isStage   = pin.name === "Yves Stage";
 
   return (
