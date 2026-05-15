@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/useAuth";
 import { cn } from "@/lib/utils";
@@ -104,7 +105,7 @@ const inputCls =
 // ── page ──────────────────────────────────────────────────────
 
 export default function ProfilePage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const router = useRouter();
 
   // Form fields
@@ -392,6 +393,17 @@ export default function ProfilePage() {
               Sign out
             </button>
           </div>
+
+          {/* Admin access — only visible to admins */}
+          {isAdmin && (
+            <div className="pt-2 border-t border-charcoal/10">
+              <Link href="/admin">
+                <button className="w-full py-3 rounded-2xl bg-charcoal/8 text-charcoal/50 text-sm font-semibold flex items-center justify-center gap-2 hover:bg-charcoal/12 transition-colors">
+                  ⚙️ Admin Panel
+                </button>
+              </Link>
+            </div>
+          )}
 
         </div>
       </div>
