@@ -137,6 +137,7 @@ export default function CarsClient() {
   const [bikeEditNote, setBikeEditNote] = useState("");
   const [bikeEditError, setBikeEditError] = useState<string | null>(null);
   const [bikeEditing, setBikeEditing] = useState(false);
+  const [confirmDeleteBikeId, setConfirmDeleteBikeId] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
   const [joinToast, setJoinToast] = useState(false);
   const [editToast, setEditToast] = useState(false);
@@ -314,7 +315,9 @@ export default function CarsClient() {
   }
 
   async function handleRemoveBike(bikeId: string) {
-    await supabase.from("bikes").delete().eq("id", bikeId);
+    const { error } = await supabase.from("bikes").delete().eq("id", bikeId);
+    if (error) { console.error("[removeBike] error:", error); return; }
+    setConfirmDeleteBikeId(null);
     await refresh();
   }
 
@@ -485,56 +488,81 @@ export default function CarsClient() {
           )}
 
           {bikes.map((bike) => (
-            <div
+            <article
               key={bike.id}
-              className="rounded-3xl bg-cream border border-white/60 shadow-[0_2px_16px_0_rgba(45,45,45,0.07)] border-l-4 border-l-lavender p-4 flex items-start justify-between gap-2"
+              className="rounded-3xl bg-cream border border-white/60 shadow-[0_2px_16px_0_rgba(45,45,45,0.07)] border-l-4 border-l-lavender overflow-hidden"
             >
-              <div className="space-y-1 min-w-0">
-                <p className="text-sm font-bold text-charcoal">
-                  🚲 {bike.rider?.name ?? "Cycliste"}
-                  {bike.bike_model && (
-                    <span className="text-charcoal/40 font-normal"> · {bike.bike_model}</span>
+              <div className="p-4 flex items-start justify-between gap-2">
+                <div className="space-y-1 min-w-0">
+                  <p className="text-sm font-bold text-charcoal">
+                    🚲 {bike.rider?.name ?? "Cycliste"}
+                    {bike.bike_model && (
+                      <span className="text-charcoal/40 font-normal"> · {bike.bike_model}</span>
+                    )}
+                  </p>
+                  {bike.departure_address && (
+                    <p className="text-sm text-charcoal/70 flex gap-1.5 items-start">
+                      <span className="mt-px shrink-0">📍</span>
+                      <span>{bike.departure_address}</span>
+                    </p>
                   )}
-                </p>
-                {bike.departure_address && (
-                  <p className="text-sm text-charcoal/70 flex gap-1.5 items-start">
-                    <span className="mt-px shrink-0">📍</span>
-                    <span>{bike.departure_address}</span>
-                  </p>
-                )}
-                {bike.departure_datetime && (
-                  <p className="text-sm text-charcoal/60 flex gap-1.5 items-center">
-                    <span>⏱️</span>
-                    <span>{formatDateTime(bike.departure_datetime)}</span>
-                  </p>
-                )}
-                {bike.note && (
-                  <p className="text-xs text-charcoal/50 italic">{bike.note}</p>
+                  {bike.departure_datetime && (
+                    <p className="text-sm text-charcoal/60 flex gap-1.5 items-center">
+                      <span>⏱️</span>
+                      <span>{formatDateTime(bike.departure_datetime)}</span>
+                    </p>
+                  )}
+                  {bike.note && (
+                    <p className="text-xs text-charcoal/50 italic">{bike.note}</p>
+                  )}
+                </div>
+                {bike.rider_id === currentUserId && confirmDeleteBikeId !== bike.id && (
+                  <div className="flex gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => openEditBike(bike)}
+                      title="Modifier mon vélo"
+                      className="w-7 h-7 rounded-full bg-charcoal/6 flex items-center justify-center text-sm text-charcoal/50 hover:bg-lavender/20 hover:text-lavender transition-colors"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteBikeId(bike.id)}
+                      title="Supprimer mon vélo"
+                      className="w-7 h-7 rounded-full bg-charcoal/6 flex items-center justify-center text-sm text-charcoal/50 hover:bg-pink/20 hover:text-pink/80 transition-colors"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 )}
               </div>
-              {bike.rider_id === currentUserId && (
-                <div className="flex gap-1.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => openEditBike(bike)}
-                    title="Modifier mon vélo"
-                    className="w-7 h-7 rounded-full bg-charcoal/6 flex items-center justify-center text-sm text-charcoal/50 hover:bg-lavender/20 hover:text-lavender transition-colors"
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (window.confirm("Supprimer ton vélo ?")) handleRemoveBike(bike.id);
-                    }}
-                    title="Supprimer mon vélo"
-                    className="w-7 h-7 rounded-full bg-charcoal/6 flex items-center justify-center text-sm text-charcoal/50 hover:bg-pink/20 hover:text-pink/80 transition-colors"
-                  >
-                    🗑️
-                  </button>
+              {confirmDeleteBikeId === bike.id && (
+                <div className="px-4 pb-4">
+                  <div className="rounded-2xl bg-pink/10 border border-pink/25 p-4 space-y-3">
+                    <p className="text-sm font-semibold text-charcoal leading-snug">
+                      Supprimer ton vélo ?
+                    </p>
+                    <div className="flex gap-2">
+                      <PastelButton
+                        variant="pink"
+                        onClick={() => handleRemoveBike(bike.id)}
+                        className="text-xs py-2 px-4"
+                      >
+                        Supprimer
+                      </PastelButton>
+                      <PastelButton
+                        variant="lavender"
+                        onClick={() => setConfirmDeleteBikeId(null)}
+                        className="text-xs py-2 px-4"
+                      >
+                        Annuler
+                      </PastelButton>
+                    </div>
+                  </div>
                 </div>
               )}
-            </div>
+            </article>
           ))}
 
           {myBike ? (
