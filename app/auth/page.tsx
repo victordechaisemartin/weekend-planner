@@ -96,32 +96,26 @@ export default function AuthPage() {
   const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
-    // Recovery redirect — skip the logged-in check so we don't bounce the user
-    // away before they can set their new password.
-    if (window.location.hash.includes("type=recovery")) {
-      setCheckingSession(false);
-      return;
-    }
+    let recoveryDetected = false;
+
+    // Subscribe first — onAuthStateChange fires PASSWORD_RECOVERY synchronously
+    // when a session was created from a reset link, before getSession resolves.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        recoveryDetected = true;
+        setMode("reset");
+        setCheckingSession(false);
+      }
+    });
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (recoveryDetected) return;
       if (session) router.replace("/announcements");
       else setCheckingSession(false);
     });
+
+    return () => subscription.unsubscribe();
   }, [router]);
-
-  // Detect password-reset redirect and switch to the update-password form
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (!hash || !hash.includes("type=recovery")) return;
-
-    setMode("reset");
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        setError("Lien expiré 🌸 Demande un nouveau lien de réinitialisation");
-        setMode("forgot");
-      }
-    });
-  }, []);
 
   // ── state ──────────────────────────────────────────────────
 
