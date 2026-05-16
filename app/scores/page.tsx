@@ -133,15 +133,15 @@ export default function ScoresPage() {
                 <div className="flex items-end justify-center gap-3 pt-2">
                   {/* 2nd place */}
                   {second && (
-                    <PodiumCard team={second} medal="🥈" rank={2} height="h-28" />
+                    <PodiumCard team={second} medal="🥈" height="h-28" />
                   )}
                   {/* 1st place */}
                   {first && (
-                    <PodiumCard team={first} medal="👑" rank={1} height="h-36" />
+                    <PodiumCard team={first} medal="👑" height="h-36" />
                   )}
                   {/* 3rd place */}
                   {third && (
-                    <PodiumCard team={third} medal="🥉" rank={3} height="h-24" />
+                    <PodiumCard team={third} medal="🥉" height="h-24" />
                   )}
                 </div>
 
@@ -249,12 +249,10 @@ export default function ScoresPage() {
 function PodiumCard({
   team,
   medal,
-  rank,
   height,
 }: {
   team: TeamTotal;
   medal: string;
-  rank: number;
   height: string;
 }) {
   const c = TEAM_COLORS[team.color] ?? TEAM_COLORS.white;
