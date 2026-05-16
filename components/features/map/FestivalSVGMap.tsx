@@ -65,7 +65,7 @@ function LabelPill({ name, color, yOffset }: {
         y={pillH / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fontSize={140}
+        fontSize={180}
         fontWeight="800"
         fill="white"
         style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}
