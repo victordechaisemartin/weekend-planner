@@ -65,8 +65,7 @@ export default function TentCard({
   const isFull = freeSpots <= 0;
   const isHost = tent.host_id === currentUserId;
   const isGuest = tent.guests.some((g) => g.id === currentUserId);
-  const hostIsGuest = tent.guests.some((g) => g.id === tent.host_id);
-  const typeIcon    = TYPE_ICONS[tent.type] ?? "🏕️";
+  const typeIcon = TYPE_ICONS[tent.type] ?? "🏕️";
 
   // ── edit state ────────────────────────────────────────────────
   const [editing,       setEditing]       = useState(false);
