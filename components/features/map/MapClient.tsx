@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -26,6 +26,8 @@ const TILE_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>';
 
 const PASTEL = ["#F4A7B9", "#C9B8E8", "#B8E4D8"] as const;
+
+const BIKE_COLORS = ["#C9B8E8", "#B8E4D8", "#F4A7B9", "#D4A5F5"];
 
 // Created at module level — this file is only ever loaded client-side (ssr:false)
 const flowerIcon = L.divIcon({
@@ -54,16 +56,16 @@ type MappedCar = CarInfo & {
   color: string;
 };
 
-type BikeInfo = {
+type MappedBike = {
   id: string;
-  departure_address: string | null;
+  rider_id: string;
+  departure_address: string;
+  departure_datetime: string | null;
   bike_model: string | null;
   note: string | null;
-  rider: { id: string; name: string };
-};
-
-type MappedBike = BikeInfo & {
   coords: [number, number];
+  color: string;
+  rider?: { id: string; name: string };
 };
 
 // ── helpers ───────────────────────────────────────────────────
@@ -135,7 +137,6 @@ async function fetchCars(eventId: string): Promise<CarInfo[]> {
 export default function MapClient() {
   const [mappedCars, setMappedCars] = useState<MappedCar[]>([]);
   const [mappedBikes, setMappedBikes] = useState<MappedBike[]>([]);
-  const [bikeCount, setBikeCount] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [eventId, setEventId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -155,7 +156,6 @@ export default function MapClient() {
         fetchCars(event.id),
         supabase.from("bikes").select("*").eq("event_id", event.id),
       ]);
-      setBikeCount(rawBikeRows?.length ?? 0);
 
       // Fetch rider names separately — avoids FK schema-cache dependency
       const bikeRiderIds = Array.from(
@@ -165,19 +165,19 @@ export default function MapClient() {
         ? await supabase.from("users").select("id, name").in("id", bikeRiderIds)
         : { data: [] as { id: string; name: string }[] };
 
-      const bikesData: BikeInfo[] = (rawBikeRows ?? []).map((b) => ({
+      const bikesWithRiders = (rawBikeRows ?? []).map((b) => ({
         ...b,
         rider: (bikeRiders ?? []).find((r) => r.id === b.rider_id) ?? { id: b.rider_id, name: "Cycliste" },
       }));
 
-      // Geocode bikes that have a departure address
+      // Geocode bikes that have a departure address, assign per-bike color
       const bikeResults = await Promise.allSettled(
-        bikesData
+        bikesWithRiders
           .filter((b) => b.departure_address)
-          .map(async (bike): Promise<MappedBike> => {
-            const coords = await geocode(bike.departure_address!);
+          .map(async (bike, i): Promise<MappedBike> => {
+            const coords = await geocode(bike.departure_address);
             if (!coords) throw new Error("no coords");
-            return { ...bike, coords };
+            return { ...bike, coords, color: BIKE_COLORS[i % BIKE_COLORS.length] };
           })
       );
       setMappedBikes(
@@ -312,46 +312,61 @@ export default function MapClient() {
           )
         )}
 
-        {/* Bike markers */}
+        {/* Bike polylines + markers */}
         {mappedBikes.map((bike) => (
-          <CircleMarker
-            key={`bike-${bike.id}`}
-            center={bike.coords}
-            radius={12}
-            pathOptions={{
-              fillColor: "#C9B8E8",
-              fillOpacity: 0.92,
-              color: "white",
-              weight: 2.5,
-            }}
-          >
-            <Tooltip permanent direction="top" offset={[0, -14]}>
-              {bike.rider.name} 🚲
-            </Tooltip>
-            <Popup>
-              <div style={{ padding: "14px 18px", minWidth: 190 }}>
-                <p style={{ fontWeight: 800, fontSize: 14, color: "#2D2D2D", margin: "0 0 4px" }}>
-                  🚲 {bike.rider.name}
-                </p>
-                {bike.bike_model && (
-                  <p style={{ fontSize: 11, color: "rgba(45,45,45,0.45)", margin: "0 0 8px", fontWeight: 600 }}>
-                    {bike.bike_model}
+          <Fragment key={bike.id}>
+            <Polyline
+              positions={[bike.coords, DESTINATION]}
+              pathOptions={{
+                color: bike.color,
+                dashArray: "8 8",
+                weight: 2,
+                opacity: 0.75,
+              }}
+            />
+            <CircleMarker
+              center={bike.coords}
+              radius={12}
+              pathOptions={{
+                fillColor: bike.color,
+                fillOpacity: 0.9,
+                color: "white",
+                weight: 3,
+              }}
+            >
+              <Tooltip permanent direction="top" className="bike-label">
+                <span>{bike.rider?.name ?? "Cycliste"} 🚲</span>
+              </Tooltip>
+              <Popup>
+                <div style={{ padding: "14px 18px", minWidth: 190 }}>
+                  <p style={{ fontWeight: 800, fontSize: 14, color: "#2D2D2D", margin: "0 0 4px" }}>
+                    🚲 {bike.rider?.name ?? "Cycliste"}
                   </p>
-                )}
-                {bike.departure_address && (
-                  <p style={{ fontSize: 12, color: "rgba(45,45,45,0.6)", margin: "0 0 4px", display: "flex", gap: 5, alignItems: "flex-start" }}>
-                    <span>📍</span>
-                    <span>{bike.departure_address}</span>
-                  </p>
-                )}
-                {bike.note && (
-                  <p style={{ fontSize: 12, color: "rgba(45,45,45,0.6)", margin: "0", fontStyle: "italic" }}>
-                    💬 {bike.note}
-                  </p>
-                )}
-              </div>
-            </Popup>
-          </CircleMarker>
+                  {bike.bike_model && (
+                    <p style={{ fontSize: 11, color: "rgba(45,45,45,0.45)", margin: "0 0 8px", fontWeight: 600 }}>
+                      {bike.bike_model}
+                    </p>
+                  )}
+                  {bike.departure_datetime && (
+                    <p style={{ fontSize: 12, color: "rgba(45,45,45,0.6)", margin: "0 0 4px" }}>
+                      ⏱️ {new Date(bike.departure_datetime).toLocaleDateString("fr-FR", {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  )}
+                  {bike.note && (
+                    <p style={{ fontSize: 12, color: "rgba(45,45,45,0.6)", margin: "0", fontStyle: "italic" }}>
+                      💬 {bike.note}
+                    </p>
+                  )}
+                </div>
+              </Popup>
+            </CircleMarker>
+          </Fragment>
         ))}
 
         {/* Destination flower marker */}
@@ -461,13 +476,6 @@ export default function MapClient() {
         })}
       </MapContainer>
 
-      {bikeCount > 0 && (
-        <div className="absolute top-4 left-4 z-[400] pointer-events-none">
-          <div className="bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 shadow-md border border-lavender/30 text-sm font-semibold text-charcoal/70 whitespace-nowrap">
-            🚲 {bikeCount} cycliste{bikeCount !== 1 ? "s" : ""} rejoignent le festival
-          </div>
-        </div>
-      )}
     </div>
   );
 }
