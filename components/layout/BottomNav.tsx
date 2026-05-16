@@ -26,6 +26,11 @@ const navItems = [
     ),
   },
   {
+    href: "/scores",
+    label: "Scores",
+    icon: <span className="text-xl leading-none">🏆</span>,
+  },
+  {
     href: "/cars",
     label: "Cars",
     icon: (
