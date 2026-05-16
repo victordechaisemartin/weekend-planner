@@ -19,7 +19,7 @@ type Pin = {
 const PINS: Pin[] = [
   { name: "Entrée 1",       x: 1403, y: 1456, emoji: "🌸",  labelColor: "#F4A7B9" },
   { name: "Entrée 2",       x: 8981, y: 2582, emoji: "🌸",  labelColor: "#F4A7B9" },
-  { name: "Maison d'Yves",  x: 2526, y: 3246, emoji: "🏠",  labelColor: "#F4A7B9" },
+  { name: "Dutch House",  x: 2526, y: 3246, emoji: "🏠",  labelColor: "#F4A7B9" },
   { name: "Maison Titanic", x: 3555, y: 4471, emoji: "🏠",  labelColor: "#C9B8E8" },
   { name: "Yves Stage",     x: 3555, y: 3842, emoji: "🎤",  labelColor: "#F4A7B9" },
   { name: "Camping",        x: 4210, y: 4108, emoji: "🏕️",  labelColor: "#8FBC5A" },
