@@ -135,6 +135,18 @@ export default function AdminPresencePage() {
     );
   }
 
+  // ── derived ───────────────────────────────────────────────────
+
+  const usersWithNoPresence = users.filter(
+    (u) =>
+      !u.present_fri_evening &&
+      !u.present_sat_midday  &&
+      !u.present_sat_evening &&
+      !u.present_sun_midday  &&
+      !u.present_sun_evening &&
+      !u.present_mon_midday
+  );
+
   // ── render ────────────────────────────────────────────────────
 
   return (
@@ -185,6 +197,26 @@ export default function AdminPresencePage() {
             </div>
           );
         })}
+
+        {/* "Pas répondu" card */}
+        <div
+          className="shrink-0 rounded-2xl px-3 py-2 flex flex-col items-center min-w-[76px] shadow-sm"
+          style={{ background: "#2D2D2D0D" }}
+        >
+          <span className="text-lg leading-none">❓</span>
+          <span
+            className="text-2xl font-black tabular-nums leading-tight"
+            style={{ color: "#2D2D2D" }}
+          >
+            {usersWithNoPresence.length}
+          </span>
+          <span
+            className="text-[9px] font-extrabold uppercase tracking-wide text-center leading-tight mt-0.5"
+            style={{ color: "#2D2D2D66" }}
+          >
+            Pas répondu
+          </span>
+        </div>
       </div>
 
       {/* ── Collapsible moment sections ── */}
@@ -314,6 +346,50 @@ export default function AdminPresencePage() {
               <p className="text-sm" style={{ color: "#2D2D2D40" }}>
                 Aucun besoin alimentaire renseigné 🌸
               </p>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* ── No presence section ── */}
+      <section
+        className="rounded-2xl overflow-hidden shadow-sm"
+        style={{ background: "white" }}
+      >
+        <button
+          type="button"
+          onClick={() => toggleMoment("none")}
+          className="w-full flex items-center justify-between px-4 py-3 text-left"
+        >
+          <span className="font-bold text-sm" style={{ color: "#2D2D2D" }}>
+            ❓ Aucune présence indiquée
+            <span className="font-normal ml-1.5" style={{ color: "#2D2D2D66" }}>
+              — {usersWithNoPresence.length} personne{usersWithNoPresence.length !== 1 ? "s" : ""}
+            </span>
+          </span>
+          <span className="text-xs ml-2 shrink-0" style={{ color: "#2D2D2D44" }}>
+            {openMoments.has("none") ? "▲" : "▼"}
+          </span>
+        </button>
+
+        {openMoments.has("none") && (
+          <div className="px-4 pb-4">
+            {usersWithNoPresence.length === 0 ? (
+              <p className="text-sm" style={{ color: "#2D2D2D40" }}>
+                Tout le monde a indiqué sa présence 🌸
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {usersWithNoPresence.map((u) => (
+                  <span
+                    key={u.name}
+                    className="px-3 py-1 text-sm rounded-full font-medium"
+                    style={{ background: "#2D2D2D0D", color: "#2D2D2D99" }}
+                  >
+                    {u.name}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
         )}
