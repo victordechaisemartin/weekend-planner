@@ -19,7 +19,7 @@ type Props = {
   onJoin: (tentId: string) => void;
   onLeave: (tentId: string) => void;
   onRemoveGuest: (tentId: string, guestId: string) => void;
-  onEdit: (tentId: string, capacity: number) => Promise<void>;
+  onEdit: (tentId: string, name: string, type: string, capacity: number) => Promise<void>;
   onDelete: (tentId: string) => Promise<void>;
   busy: boolean;
 };
@@ -69,6 +69,8 @@ export default function TentCard({
 
   // ── edit state ────────────────────────────────────────────────
   const [editing,       setEditing]       = useState(false);
+  const [editName,      setEditName]      = useState(tent.name ?? "");
+  const [editType,      setEditType]      = useState(tent.type ?? "Tent");
   const [editCapacity,  setEditCapacity]  = useState(tent.capacity);
   const [editSaving,    setEditSaving]    = useState(false);
 
@@ -77,13 +79,15 @@ export default function TentCard({
   const [deleting,      setDeleting]      = useState(false);
 
   function openEdit() {
+    setEditName(tent.name ?? "");
+    setEditType(tent.type ?? "Tent");
     setEditCapacity(tent.capacity);
     setEditing(true);
   }
 
   async function submitEdit() {
     setEditSaving(true);
-    await onEdit(tent.id, editCapacity);
+    await onEdit(tent.id, editName.trim(), editType, editCapacity);
     setEditSaving(false);
     setEditing(false);
   }
@@ -302,7 +306,7 @@ export default function TentCard({
         <div className="relative w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-cream px-6 pt-5 pb-8 space-y-5 z-[61]">
           <div className="w-10 h-1 rounded-full bg-charcoal/15 mx-auto sm:hidden" />
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-charcoal">Modifier la tente ✏️</h2>
+            <h2 className="text-lg font-bold text-charcoal">Modifier · {tent.name} ✏️</h2>
             <button
               onClick={() => !editSaving && setEditing(false)}
               className="w-8 h-8 rounded-full bg-charcoal/8 flex items-center justify-center text-charcoal/50 hover:bg-charcoal/12 transition-colors"
@@ -311,6 +315,40 @@ export default function TentCard({
             </button>
           </div>
           <div className="space-y-4">
+            {/* Name */}
+            <div>
+              <label className={labelCls}>Nom</label>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                maxLength={40}
+                className="w-full rounded-2xl border border-charcoal/10 bg-white/80 px-4 py-2.5 text-sm text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:ring-2 focus:ring-lavender/50"
+              />
+            </div>
+
+            {/* Type */}
+            <div>
+              <label className={labelCls}>Type</label>
+              <div className="flex gap-2">
+                {(isAdmin ? ["Tent", "Van", "Room"] : ["Tent", "Van"]).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setEditType(t)}
+                    className={`flex-1 rounded-xl border py-2 text-xs font-bold transition-colors ${
+                      editType === t
+                        ? "border-lavender bg-lavender/35 text-charcoal/80"
+                        : "border-charcoal/10 bg-white/70 text-charcoal/40 hover:bg-white"
+                    }`}
+                  >
+                    {TYPE_ICONS[t]} {TYPE_LABELS[t]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Capacity */}
             <div>
               <label className={labelCls}>Capacité (vous inclus)</label>
               <div className="flex items-center gap-3">
@@ -334,10 +372,11 @@ export default function TentCard({
                 <span className="text-xs text-charcoal/35 font-medium">personnes</span>
               </div>
             </div>
+
             <PastelButton
               variant="lavender"
               fullWidth
-              disabled={editSaving}
+              disabled={editSaving || !editName.trim()}
               onClick={submitEdit}
             >
               {editSaving ? "Sauvegarde…" : "Sauvegarder 🌸"}

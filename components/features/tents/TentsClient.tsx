@@ -116,8 +116,8 @@ export default function TentsClient() {
     setBusy(false);
   }
 
-  async function handleEdit(tentId: string, capacity: number) {
-    await supabase.from("tents").update({ capacity }).eq("id", tentId);
+  async function handleEdit(tentId: string, name: string, type: string, capacity: number) {
+    await supabase.from("tents").update({ name, type, capacity }).eq("id", tentId);
     await refresh();
   }
 
