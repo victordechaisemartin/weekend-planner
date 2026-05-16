@@ -126,7 +126,6 @@ export default function AuthPage() {
   const [email,          setEmail]         = useState("");
   const [password,       setPassword]      = useState("");
   const [error,          setError]         = useState("");
-  const [success,        setSuccess]       = useState("");
   const [loading,        setLoading]       = useState(false);
   const [showSignupHint, setShowSignupHint] = useState(false);
 
@@ -147,7 +146,6 @@ export default function AuthPage() {
   function switchMode(m: Mode) {
     setMode(m);
     setError("");
-    setSuccess("");
     setShowSignupHint(false);
   }
 
