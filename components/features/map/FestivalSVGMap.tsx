@@ -24,13 +24,13 @@ const PINS: Pin[] = [
   { name: "Yves Stage",     x: 3555, y: 3842, emoji: "🎤",  labelColor: "#F4A7B9" },
   { name: "Camping",        x: 4210, y: 4108, emoji: "🏕️",  labelColor: "#8FBC5A" },
   { name: "Grange",         x: 6736, y: 4008, emoji: "🚜", labelColor: "#D4A574" },
-  { name: "Rambouboat",     x: 6700, y: 4058, emoji: "🏴‍☠️", labelColor: "#7EC8E3" },
+  { name: "Rambouboat",     x: 6630, y: 4118, emoji: "🏴‍☠️", labelColor: "#7EC8E3" },
   { name: "Maison Rouge",   x: 8139, y: 3411, emoji: "🏠", labelColor: "#FF6B6B" },
   { name: "Étang 2 îlots",  x: 7671, y: 4008, emoji: "🎣", labelColor: "#7EC8E3" },
   { name: "Tennis",         x: 7578, y: 4870, emoji: "🎾", labelColor: "#8FBC5A" },
   { name: "Cabane",         x: 6081, y: 2086, emoji: "🛖", labelColor: "#D4A574" },
   { name: "Ramboulac",     x: 2900, y: 3876, emoji: "🎣",  labelColor: "#7EC8E3" },
-  { name: "Tongs de Sev",   x: 2950, y: 3906, emoji: "🩴",  labelColor: "#7EC8E3" },
+  { name: "Tongs de Sev",   x: 3050, y: 3956, emoji: "🩴",  labelColor: "#7EC8E3" },
 ];
 
 // ── LabelPill ─────────────────────────────────────────────────
