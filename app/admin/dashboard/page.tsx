@@ -56,7 +56,7 @@ export default function DashboardPage() {
         { data: latestAnnouncement },
       ] = await Promise.all([
         supabase.from("users").select("id, name"),
-        supabase.from("cars").select("id, seats_total").eq("event_id", eventId),
+        supabase.from("cars").select("id, seats_total, driver_id").eq("event_id", eventId),
         supabase.from("tents").select("id, capacity").eq("event_id", eventId),
         supabase.from("car_passengers").select("user_id"),
         supabase.from("tent_guests").select("user_id"),
@@ -77,6 +77,12 @@ export default function DashboardPage() {
       const totalCarSeats  = allCars.reduce((s, c) => s + c.seats_total, 0);
       const totalTentSpots = allTents.reduce((s, t) => s + t.capacity, 0);
 
+      // A user "has a car" if they're a driver OR a passenger
+      const usersWithCarIds = new Set<string>([
+        ...allCars.map((c) => c.driver_id).filter(Boolean),
+        ...Array.from(passengerIds),
+      ]);
+
       setStats({
         userCount:            allUsers.length,
         carsCount:            allCars.length,
@@ -84,7 +90,7 @@ export default function DashboardPage() {
         tentsCount:           allTents.length,
         freeTentSpots:        Math.max(0, totalTentSpots - guestIds.size),
         latestAnnouncementAt: latestAnnouncement?.created_at ?? null,
-        usersWithoutCar:      allUsers.filter((u) => !passengerIds.has(u.id)),
+        usersWithoutCar:      allUsers.filter((u) => !usersWithCarIds.has(u.id)),
         usersWithoutTent:     allUsers.filter((u) => !guestIds.has(u.id)),
       });
       setLoading(false);

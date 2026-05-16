@@ -25,6 +25,7 @@ type RawUser = {
 type CarRow = {
   id: string;
   name: string | null;
+  driver_id: string;
   driver: { name: string } | null;
 };
 
@@ -84,7 +85,7 @@ export default function AdminGuestsPage() {
           .order("name", { ascending: true }),
         supabase
           .from("cars")
-          .select("id, name, driver:users!driver_id(name)")
+          .select("id, name, driver_id, driver:users!driver_id(name)")
           .eq("event_id", eventId),
         supabase
           .from("car_passengers")
@@ -107,12 +108,19 @@ export default function AdminGuestsPage() {
       );
       const tentNameMap = new Map(tents.map((t) => [t.id, t.name as string]));
 
-      const userCarMap  = new Map(
+      // Passengers
+      const userCarMap = new Map(
         (rawCarPass ?? []).map((p) => [
           p.user_id,
           carNameMap.get(p.car_id) ?? "Voiture",
         ])
       );
+      // Drivers (only add if not already a passenger in the same or another car)
+      for (const car of cars) {
+        if (car.driver_id && !userCarMap.has(car.driver_id)) {
+          userCarMap.set(car.driver_id, carNameMap.get(car.id) ?? "Voiture");
+        }
+      }
       const userTentMap = new Map(
         (rawTentGuests ?? []).map((g) => [
           g.user_id,
