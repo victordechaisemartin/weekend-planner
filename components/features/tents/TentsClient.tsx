@@ -186,6 +186,10 @@ export default function TentsClient() {
 
   // ── derived stats ──────────────────────────────────────────
 
+  const TYPE_ORDER: Record<string, number> = { Tent: 0, Van: 1, Room: 2 };
+  const sortedTents   = [...tents].sort(
+    (a, b) => (TYPE_ORDER[a.type] ?? 0) - (TYPE_ORDER[b.type] ?? 0)
+  );
   const tentCount     = tents.filter((t) => t.type !== "Room").length;
   const roomCount     = tents.filter((t) => t.type === "Room").length;
   const tentFreeSpots = tents
@@ -258,7 +262,7 @@ export default function TentsClient() {
             </p>
           </div>
         ) : (
-          tents.map((tent) => (
+          sortedTents.map((tent) => (
             <TentCard
               key={tent.id}
               tent={tent}
