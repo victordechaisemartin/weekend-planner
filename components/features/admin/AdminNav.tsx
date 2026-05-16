@@ -7,7 +7,7 @@ const TABS = [
   { label: "Dashboard",  href: "/admin/dashboard"      },
   { label: "News",       href: "/admin/announcements"  },
   { label: "Guests",     href: "/admin/guests"         },
-  { label: "🗓️ Présence", href: "/admin/presence"      },
+  { label: "Présence", href: "/admin/presence"      },
   { label: "DJs",        href: "/admin/djs"            },
   { label: "Planning",  href: "/admin/planning"       },
 ];

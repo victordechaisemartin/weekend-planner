@@ -304,7 +304,7 @@ export default function ProfilePage() {
             <div>
               <label className={labelCls}>
                 Quand seras-tu là ?{" "}
-                <span className="normal-case font-medium text-charcoal/30">(optional)</span>
+                <span className="normal-case font-medium text-charcoal/30">(Coches toutes les options)</span>
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {PRESENCE_SLOTS.map(({ key, label }) => (
