@@ -79,7 +79,7 @@ function LabelPill({ name, color, yOffset }: {
 // ── PinGroup ──────────────────────────────────────────────────
 
 function PinGroup({ pin, scale }: { pin: Pin; scale: number }) {
-  const ICON_SIZE = 600;
+  const ICON_SIZE = 900;
   const isStage   = pin.name === "Yves Stage";
 
   return (
