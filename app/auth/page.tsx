@@ -82,12 +82,13 @@ const linkCls = "font-semibold text-pink hover:underline";
 
 // ── page ──────────────────────────────────────────────────────
 
-type Mode = "signin" | "signup" | "forgot" | "reset";
+type Mode = "signin" | "signup" | "forgot" | "verify" | "reset";
 
 const TITLES: Record<Mode, string> = {
   signin: "Bon retour 🌸",
   signup: "Rejoins Lolapabouillet 🌸",
   forgot: "Réinitialiser mon mot de passe 🌸",
+  verify: "Vérifie ton email 🌸",
   reset:  "Nouveau mot de passe 🌸",
 };
 
@@ -135,6 +136,9 @@ export default function AuthPage() {
   const [beerLevel,    setBeerLevel]   = useState(0);
   const [wineLevel,    setWineLevel]   = useState(0);
   const [spiritsLevel, setSpiritLevel] = useState(0);
+
+  // forgot/verify-only
+  const [otpCode, setOtpCode] = useState("");
 
   // reset-only
   const [newPassword,     setNewPassword]     = useState("");
@@ -248,26 +252,51 @@ export default function AuthPage() {
     router.push("/announcements");
   }
 
-  // ── forgot password ─────────────────────────────────────────
+  // ── forgot password — send OTP ─────────────────────────────
 
   async function handleReset(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(
-      email.trim().toLowerCase(),
-      { redirectTo: `${window.location.origin}/auth` }
-    );
+    const { error: otpErr } = await supabase.auth.signInWithOtp({
+      email: email.trim().toLowerCase(),
+      options: { shouldCreateUser: false },
+    });
 
     setLoading(false);
 
-    if (resetErr) {
-      setError(resetErr.message);
+    if (otpErr) {
+      setError(otpErr.message);
       return;
     }
 
-    setSuccess("Vérifie ta boîte mail 🌸");
+    setMode("verify");
+    setError("");
+  }
+
+  // ── verify OTP ─────────────────────────────────────────────
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    const { error: verifyErr } = await supabase.auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token: otpCode,
+      type:  "email",
+    });
+
+    setLoading(false);
+
+    if (verifyErr) {
+      setError(verifyErr.message);
+      return;
+    }
+
+    setMode("reset");
+    setError("");
   }
 
   // ── render ─────────────────────────────────────────────────
@@ -486,58 +515,88 @@ export default function AuthPage() {
           {/* ── FORGOT PASSWORD ── */}
           {mode === "forgot" && (
             <form onSubmit={handleReset} className="space-y-4">
-              {success ? (
-                <div className="space-y-4">
-                  <p className="text-sm font-semibold text-charcoal text-center py-4">
-                    {success}
-                  </p>
-                  <p className="text-center text-xs text-charcoal/40">
-                    <button
-                      type="button"
-                      onClick={() => switchMode("signin")}
-                      className={linkCls}
-                    >
-                      Retour à la connexion
-                    </button>
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div>
-                    <label className={labelCls}>Email</label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="ton@email.com"
-                      required
-                      className={inputCls}
-                    />
-                  </div>
+              <div>
+                <label className={labelCls}>Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="ton@email.com"
+                  required
+                  className={inputCls}
+                />
+              </div>
 
-                  {error && (
-                    <p className="text-xs font-medium text-pink">{error}</p>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={loading || !email.trim()}
-                    className={submitCls}
-                  >
-                    {loading ? "Envoi…" : "Envoyer le lien 🌸"}
-                  </button>
-
-                  <p className="text-center text-xs text-charcoal/40">
-                    <button
-                      type="button"
-                      onClick={() => switchMode("signin")}
-                      className={linkCls}
-                    >
-                      Retour à la connexion
-                    </button>
-                  </p>
-                </>
+              {error && (
+                <p className="text-xs font-medium text-pink">{error}</p>
               )}
+
+              <button
+                type="submit"
+                disabled={loading || !email.trim()}
+                className={submitCls}
+              >
+                {loading ? "Envoi…" : "Envoyer le code 🌸"}
+              </button>
+
+              <p className="text-center text-xs text-charcoal/40">
+                <button
+                  type="button"
+                  onClick={() => switchMode("signin")}
+                  className={linkCls}
+                >
+                  Retour à la connexion
+                </button>
+              </p>
+            </form>
+          )}
+
+          {/* ── VERIFY OTP ── */}
+          {mode === "verify" && (
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div className="rounded-2xl bg-mint/20 border border-mint/30 px-4 py-3">
+                <p className="text-sm font-semibold text-charcoal leading-snug">
+                  📧 Un code à 6 chiffres t&apos;a été envoyé !<br />
+                  Entre-le ci-dessous 🌸
+                </p>
+              </div>
+
+              <div>
+                <label className={labelCls}>Code de vérification</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                  placeholder="000000"
+                  required
+                  className={`${inputCls} text-center text-xl tracking-widest font-mono`}
+                />
+              </div>
+
+              {error && (
+                <p className="text-xs font-medium text-pink">{error}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading || otpCode.length !== 6}
+                className={submitCls}
+              >
+                {loading ? "Vérification…" : "Vérifier le code 🌸"}
+              </button>
+
+              <p className="text-center text-xs text-charcoal/40">
+                <button
+                  type="button"
+                  onClick={() => switchMode("forgot")}
+                  className={linkCls}
+                >
+                  Retour
+                </button>
+              </p>
             </form>
           )}
 
