@@ -15,6 +15,7 @@ export type CarData = Car & {
 type Props = {
   car: CarData;
   currentUserId: string | null;
+  isAdmin?: boolean;
   onJoin: (carId: string) => void;
   onLeave: (carId: string) => void;
   onRemovePassenger: (carId: string, passengerId: string) => void;
@@ -39,11 +40,13 @@ function formatDeparture(iso: string) {
   });
 }
 
-export default function CarCard({ car, currentUserId, onJoin, onLeave, onRemovePassenger, onEdit, onDelete, busy }: Props) {
+export default function CarCard({ car, currentUserId, isAdmin = false, onJoin, onLeave, onRemovePassenger, onEdit, onDelete, busy }: Props) {
   const freeSeats = car.seats_total - car.passengers.length;
   const isFull = freeSeats <= 0;
   const isDriver = car.driver.id === currentUserId;
   const isPassenger = car.passengers.some((p) => p.id === currentUserId);
+  const canManage = isDriver || isAdmin;
+  const canRemove = isDriver || isAdmin;
 
   // ── edit state ────────────────────────────────────────────────
   const [editing,      setEditing]      = useState(false);
@@ -103,7 +106,7 @@ export default function CarCard({ car, currentUserId, onJoin, onLeave, onRemoveP
               <p className="text-xs text-charcoal/40 mt-0.5">{car.driver.name}</p>
             </div>
             <div className="flex flex-col items-end gap-1.5 shrink-0">
-              {isDriver && (
+              {canManage && (
                 <div className="flex gap-1">
                   <button
                     type="button"
@@ -179,7 +182,7 @@ export default function CarCard({ car, currentUserId, onJoin, onLeave, onRemoveP
                   </span>
                   <span className="text-sm text-charcoal">{p.name}</span>
                 </div>
-                {isDriver && (
+                {canRemove && (
                   <button
                     type="button"
                     onClick={() => {

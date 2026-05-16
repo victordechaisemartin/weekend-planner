@@ -113,7 +113,7 @@ const labelCls = "block text-[11px] font-bold uppercase tracking-widest text-cha
 export default function CarsClient() {
   // useAuth is only needed for user-specific UI (your car, join/leave buttons).
   // Data fetching starts immediately on mount — it does not wait for auth.
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, profile, isAdmin, loading: authLoading } = useAuth();
   const currentUserId = user?.id ?? null;
 
   const [cars, setCars] = useState<CarData[]>([]);
@@ -460,6 +460,7 @@ export default function CarsClient() {
               key={car.id}
               car={car}
               currentUserId={currentUserId}
+              isAdmin={isAdmin}
               onJoin={handleJoin}
               onLeave={handleLeave}
               onRemovePassenger={handleRemovePassenger}
