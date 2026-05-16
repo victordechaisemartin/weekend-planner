@@ -186,10 +186,14 @@ export default function TentsClient() {
 
   // ── derived stats ──────────────────────────────────────────
 
-  const totalFreeSpots = tents.reduce(
-    (sum, t) => sum + Math.max(0, t.capacity - t.guests.length),
-    0
-  );
+  const tentCount     = tents.filter((t) => t.type !== "Room").length;
+  const roomCount     = tents.filter((t) => t.type === "Room").length;
+  const tentFreeSpots = tents
+    .filter((t) => t.type !== "Room")
+    .reduce((sum, t) => sum + Math.max(0, t.capacity - t.guests.length), 0);
+  const roomFreeSpots = tents
+    .filter((t) => t.type === "Room")
+    .reduce((sum, t) => sum + Math.max(0, t.capacity - t.guests.length), 0);
 
   // ── render ─────────────────────────────────────────────────
 
@@ -222,16 +226,28 @@ export default function TentsClient() {
 
       <div className="px-4 pb-28 space-y-4">
         {/* Stats badges */}
-        {tents.length > 0 && (
-          <div className="flex gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1 rounded-full border border-lavender/40 bg-lavender/25 px-3 py-1 text-xs font-semibold text-charcoal/60">
-              ⛺ {tents.length} tent{tents.length !== 1 ? "s" : ""}
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-mint/40 bg-mint/25 px-3 py-1 text-xs font-semibold text-[#3a8c78]">
-              🌼 {totalFreeSpots} spot{totalFreeSpots !== 1 ? "s" : ""} free
-            </span>
-          </div>
-        )}
+        <div className="space-y-2">
+          {tentCount > 0 && (
+            <div className="flex gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full border border-lavender/40 bg-lavender/25 px-3 py-1 text-xs font-semibold text-[#7c6db8]">
+                🏕️ {tentCount} tente{tentCount !== 1 ? "s" : ""}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-mint/40 bg-mint/25 px-3 py-1 text-xs font-semibold text-[#3a8c78]">
+                🌼 {tentFreeSpots} place{tentFreeSpots !== 1 ? "s" : ""} libre{tentFreeSpots !== 1 ? "s" : ""}
+              </span>
+            </div>
+          )}
+          {roomCount > 0 && (
+            <div className="flex gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full border border-pink/40 bg-pink/25 px-3 py-1 text-xs font-semibold text-[#c4708a]">
+                🏠 {roomCount} chambre{roomCount !== 1 ? "s" : ""}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-mint/40 bg-mint/25 px-3 py-1 text-xs font-semibold text-[#3a8c78]">
+                🌼 {roomFreeSpots} place{roomFreeSpots !== 1 ? "s" : ""} libre{roomFreeSpots !== 1 ? "s" : ""}
+              </span>
+            </div>
+          )}
+        </div>
 
         {/* Tent list */}
         {tents.length === 0 ? (
