@@ -53,6 +53,7 @@ export default function DashboardPage() {
         { data: tents },
         { data: carPassengers },
         { data: tentGuests },
+        { data: bikes },
         { data: latestAnnouncement },
       ] = await Promise.all([
         supabase.from("users").select("id, name"),
@@ -60,6 +61,7 @@ export default function DashboardPage() {
         supabase.from("tents").select("id, capacity").eq("event_id", eventId),
         supabase.from("car_passengers").select("user_id"),
         supabase.from("tent_guests").select("user_id"),
+        supabase.from("bikes").select("rider_id").eq("event_id", eventId),
         supabase
           .from("announcements")
           .select("created_at")
@@ -77,10 +79,11 @@ export default function DashboardPage() {
       const totalCarSeats  = allCars.reduce((s, c) => s + c.seats_total, 0);
       const totalTentSpots = allTents.reduce((s, t) => s + t.capacity, 0);
 
-      // A user "has a car" if they're a driver OR a passenger
+      // A user "has transport" if they're a driver, passenger, or bike rider
       const usersWithCarIds = new Set<string>([
         ...allCars.map((c) => c.driver_id).filter(Boolean),
         ...Array.from(passengerIds),
+        ...(bikes ?? []).map((b) => b.rider_id).filter(Boolean),
       ]);
 
       setStats({

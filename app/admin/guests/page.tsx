@@ -78,6 +78,7 @@ export default function AdminGuestsPage() {
         { data: rawCarPass },
         { data: rawTents },
         { data: rawTentGuests },
+        { data: rawBikes },
       ] = await Promise.all([
         supabase
           .from("users")
@@ -97,6 +98,10 @@ export default function AdminGuestsPage() {
         supabase
           .from("tent_guests")
           .select("tent_id, user_id"),
+        supabase
+          .from("bikes")
+          .select("rider_id, bike_model")
+          .eq("event_id", eventId),
       ]);
 
       const cars  = (rawCars ?? []) as unknown as CarRow[];
@@ -119,6 +124,12 @@ export default function AdminGuestsPage() {
       for (const car of cars) {
         if (car.driver_id && !userCarMap.has(car.driver_id)) {
           userCarMap.set(car.driver_id, carNameMap.get(car.id) ?? "Voiture");
+        }
+      }
+      // Bike riders (only add if not already in a car)
+      for (const bike of (rawBikes ?? [])) {
+        if (bike.rider_id && !userCarMap.has(bike.rider_id)) {
+          userCarMap.set(bike.rider_id, bike.bike_model ? `Vélo · ${bike.bike_model}` : "Vélo");
         }
       }
       const userTentMap = new Map(
