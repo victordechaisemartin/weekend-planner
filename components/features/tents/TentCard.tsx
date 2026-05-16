@@ -66,7 +66,7 @@ export default function TentCard({
   const isHost = tent.host_id === currentUserId;
   const isGuest = tent.guests.some((g) => g.id === currentUserId);
   const hostIsGuest = tent.guests.some((g) => g.id === tent.host_id);
-  const visibleGuests = tent.guests.filter((g) => g.id !== tent.host_id);
+  const typeIcon    = TYPE_ICONS[tent.type] ?? "🏕️";
 
   // ── edit state ────────────────────────────────────────────────
   const [editing,       setEditing]       = useState(false);
@@ -104,9 +104,9 @@ export default function TentCard({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-base font-bold text-charcoal">
-            🏕️ {tent.host.name}
+            {typeIcon} {tent.name}
           </p>
-          <p className="text-xs text-charcoal/50 mt-0.5 truncate">{tent.name}</p>
+          <p className="text-xs text-charcoal/50 mt-0.5 truncate">{tent.host.name}</p>
           {tent.type === "Room" && (
             <p className="text-xs text-charcoal/40 mt-0.5">Ajoutée par l&apos;organisateur</p>
           )}
@@ -179,46 +179,38 @@ export default function TentCard({
         ))}
       </div>
 
-      {/* ── Guest list ── */}
+      {/* ── Guest list — only people who actually joined ── */}
       <div className="space-y-2">
-        {/* Host row */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium text-charcoal">{tent.host.name}</span>
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-charcoal/30">
-            host
-          </span>
-          {hostIsGuest && tent.host.snoring_warning && (
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-lavender/40 px-2 py-0.5 text-[10px] font-semibold text-charcoal/60">
-              😴 Ronfleur
-            </span>
-          )}
-        </div>
-
-        {/* Guest rows — host filtered out (shown separately above) */}
-        {visibleGuests.map((g) => (
-          <div key={g.id} className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-sm font-medium text-charcoal truncate">{g.name}</span>
-              {g.snoring_warning && (
-                <span className="shrink-0 inline-flex items-center gap-0.5 rounded-full bg-lavender/40 px-2 py-0.5 text-[10px] font-semibold text-charcoal/60">
-                  😴 Ronfleur
-                </span>
+        {tent.guests.map((g) => {
+          const gIsHost = g.id === tent.host_id;
+          return (
+            <div key={g.id} className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                <span className="text-sm font-medium text-charcoal truncate">{g.name}</span>
+                {gIsHost && (
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-charcoal/30">
+                    host
+                  </span>
+                )}
+                {g.snoring_warning && (
+                  <span className="shrink-0 inline-flex items-center gap-0.5 rounded-full bg-lavender/40 px-2 py-0.5 text-[10px] font-semibold text-charcoal/60">
+                    😴 Ronfleur
+                  </span>
+                )}
+              </div>
+              {(isHost || isAdmin) && !gIsHost && (
+                <button
+                  onClick={() => onRemoveGuest(tent.id, g.id)}
+                  disabled={busy}
+                  aria-label={`Remove ${g.name}`}
+                  className="shrink-0 w-6 h-6 rounded-full bg-white/50 flex items-center justify-center text-[11px] text-charcoal/35 hover:bg-pink/20 hover:text-pink/80 transition-all disabled:opacity-40"
+                >
+                  ✕
+                </button>
               )}
             </div>
-
-            {/* ✕ for host or admin — not the host's own guest row */}
-            {(isHost || isAdmin) && g.id !== tent.host_id && (
-              <button
-                onClick={() => onRemoveGuest(tent.id, g.id)}
-                disabled={busy}
-                aria-label={`Remove ${g.name}`}
-                className="shrink-0 w-6 h-6 rounded-full bg-white/50 flex items-center justify-center text-[11px] text-charcoal/35 hover:bg-pink/20 hover:text-pink/80 transition-all disabled:opacity-40"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* ── Action row ── */}
