@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import type { FestivalTeam, ScoreEvent } from "@/lib/types";
 import { CATEGORY_LABELS, TEAM_COLORS } from "@/lib/types";
 import PageHeader from "@/components/ui/PageHeader";
+import BouillePong from "@/components/features/scores/BouillePong";
 
 // ── types ─────────────────────────────────────────────────────
 
@@ -233,12 +234,7 @@ export default function ScoresPage() {
         )}
 
         {/* ── TAB 2: Bouille Pong ── */}
-        {tab === "bouille_pong" && (
-          <div className="py-16 text-center space-y-2">
-            <p className="text-4xl">🏓</p>
-            <p className="text-sm text-charcoal/40">Tournoi à venir...</p>
-          </div>
-        )}
+        {tab === "bouille_pong" && <BouillePong />}
       </div>
     </>
   );
