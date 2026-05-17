@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/useAuth";
 import type { BPDuo, BPMatch, FestivalTeam, ScoreEvent } from "@/lib/types";
 import { CATEGORY_LABELS, TEAM_COLORS } from "@/lib/types";
+import CustomSelect from "@/components/ui/CustomSelect";
 
 // ── constants ─────────────────────────────────────────────────
 
@@ -260,18 +261,13 @@ export default function AdminScoresPage() {
           {/* Category */}
           <div>
             <label className={labelCls}>Catégorie</label>
-            <select
+            <CustomSelect
               value={selCat}
-              onChange={(e) => handleCategoryChange(e.target.value as ScoreEvent["category"])}
-              className={inputCls}
-              style={{ fontSize: 16 }}
-            >
-              {(Object.entries(CATEGORY_LABELS) as [ScoreEvent["category"], string][]).map(
-                ([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
-                )
+              onChange={(v) => handleCategoryChange(v as ScoreEvent["category"])}
+              options={(Object.entries(CATEGORY_LABELS) as [ScoreEvent["category"], string][]).map(
+                ([key, label]) => ({ value: key, label })
               )}
-            </select>
+            />
           </div>
 
           {/* Points presets */}
@@ -529,17 +525,21 @@ export default function AdminScoresPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls}>Duo 1</label>
-              <select value={mDuo1} onChange={(e) => setMDuo1(e.target.value)} className={inputCls} style={{ fontSize: 15 }}>
-                <option value="">— Choisir —</option>
-                {duos.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </select>
+              <CustomSelect
+                value={mDuo1}
+                onChange={setMDuo1}
+                options={duos.map((d) => ({ value: d.id, label: d.name }))}
+                placeholder="— Choisir —"
+              />
             </div>
             <div>
               <label className={labelCls}>Duo 2</label>
-              <select value={mDuo2} onChange={(e) => setMDuo2(e.target.value)} className={inputCls} style={{ fontSize: 15 }}>
-                <option value="">— Choisir —</option>
-                {duos.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </select>
+              <CustomSelect
+                value={mDuo2}
+                onChange={setMDuo2}
+                options={duos.map((d) => ({ value: d.id, label: d.name }))}
+                placeholder="— Choisir —"
+              />
             </div>
           </div>
 
@@ -570,9 +570,11 @@ export default function AdminScoresPage() {
 
           <div>
             <label className={labelCls}>Phase</label>
-            <select value={mRound} onChange={(e) => setMRound(e.target.value as BPMatch["round"])} className={inputCls} style={{ fontSize: 16 }}>
-              {ROUNDS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-            </select>
+            <CustomSelect
+              value={mRound}
+              onChange={(v) => setMRound(v as BPMatch["round"])}
+              options={ROUNDS.map((r) => ({ value: r.value, label: r.label }))}
+            />
           </div>
 
           {mRound === "pool" && (
