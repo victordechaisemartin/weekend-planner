@@ -28,7 +28,14 @@ const navItems = [
   {
     href: "/scores",
     label: "Scores",
-    icon: <span className="text-xl leading-none">🏆</span>,
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+        <path d="M8 21h8M12 17v4" stroke="currentColor" />
+        <path d="M7 4H4a2 2 0 0 0-2 2v1a4 4 0 0 0 4 4h.5" stroke="currentColor" />
+        <path d="M17 4h3a2 2 0 0 1 2 2v1a4 4 0 0 1-4 4h-.5" stroke="currentColor" />
+        <path d="M7 4h10v9a5 5 0 0 1-10 0V4z" stroke="currentColor" />
+      </svg>
+    ),
   },
   {
     href: "/cars",

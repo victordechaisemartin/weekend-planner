@@ -10,7 +10,7 @@ const TABS = [
   { label: "Présence", href: "/admin/presence"      },
   { label: "DJs",        href: "/admin/djs"            },
   { label: "Planning",  href: "/admin/planning"       },
-  { label: "🏆 Scores", href: "/admin/scores"         },
+  { label: "Scores", href: "/admin/scores"         },
 ];
 
 export default function AdminNav() {
