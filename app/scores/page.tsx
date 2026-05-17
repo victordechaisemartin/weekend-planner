@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/useAuth";
 import type { FestivalTeam, ScoreEvent } from "@/lib/types";
 import { CATEGORY_LABELS, TEAM_COLORS } from "@/lib/types";
 import PageHeader from "@/components/ui/PageHeader";
@@ -32,18 +33,21 @@ function teamColors(color: FestivalTeam["color"]) {
 // ── component ─────────────────────────────────────────────────
 
 export default function ScoresPage() {
-  const [tab,     setTab]     = useState<Tab>("classement");
-  const [teams,   setTeams]   = useState<TeamTotal[]>([]);
-  const [events,  setEvents]  = useState<ScoreEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { isAdmin } = useAuth();
+  const [tab,           setTab]           = useState<Tab>("classement");
+  const [teams,         setTeams]         = useState<TeamTotal[]>([]);
+  const [events,        setEvents]        = useState<ScoreEvent[]>([]);
+  const [loading,       setLoading]       = useState(true);
+  const [scoresVisible, setScoresVisible] = useState(true);
 
   async function load() {
-    const [{ data: teamsData }, { data: eventsData }] = await Promise.all([
+    const [{ data: teamsData }, { data: eventsData }, { data: settingData }] = await Promise.all([
       supabase.from("festival_teams").select("*"),
       supabase
         .from("score_events")
         .select("*, team:festival_teams(*)")
         .order("created_at", { ascending: false }),
+      supabase.from("settings").select("value").eq("key", "scores_visible").maybeSingle(),
     ]);
 
     const rawEvents = (eventsData ?? []) as unknown as ScoreEvent[];
@@ -60,6 +64,7 @@ export default function ScoresPage() {
 
     setTeams(totals);
     setEvents(rawEvents);
+    setScoresVisible((settingData as { value: string } | null)?.value !== "false");
     setLoading(false);
   }
 
@@ -84,6 +89,17 @@ export default function ScoresPage() {
   const [first, second, third, ...rest] = teams;
 
   // ── render ────────────────────────────────────────────────────
+
+  if (!loading && !scoresVisible && !isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <span className="text-4xl">🏆</span>
+        <p className="text-sm font-bold" style={{ color: "#2D2D2D55" }}>
+          Les scores arrivent bientôt...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>

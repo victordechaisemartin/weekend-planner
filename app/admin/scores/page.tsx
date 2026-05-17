@@ -56,11 +56,12 @@ export default function AdminScoresPage() {
   const { user } = useAuth();
 
   // ── data ────────────────────────────────────────────────────
-  const [teams,   setTeams]   = useState<FestivalTeam[]>([]);
-  const [events,  setEvents]  = useState<ScoreEvent[]>([]);
-  const [duos,    setDuos]    = useState<BPDuo[]>([]);
-  const [matches, setMatches] = useState<BPMatch[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [teams,         setTeams]         = useState<FestivalTeam[]>([]);
+  const [events,        setEvents]        = useState<ScoreEvent[]>([]);
+  const [duos,          setDuos]          = useState<BPDuo[]>([]);
+  const [matches,       setMatches]       = useState<BPMatch[]>([]);
+  const [loading,       setLoading]       = useState(true);
+  const [scoresVisible, setScoresVisible] = useState(true);
 
   // ── add-points form ─────────────────────────────────────────
   const [selTeamId,  setSelTeamId]  = useState<string | null>(null);
@@ -122,7 +123,34 @@ export default function AdminScoresPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Fetch scores_visible once on mount (not part of load() so it
+  // doesn't reset on every data mutation)
+  useEffect(() => {
+    supabase
+      .from("settings")
+      .select("value")
+      .eq("key", "scores_visible")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setScoresVisible(data.value !== "false");
+      });
+  }, []);
+
   // ── handlers ─────────────────────────────────────────────────
+
+  async function handleToggleScores() {
+    const next = !scoresVisible;
+    setScoresVisible(next);
+    const { error } = await supabase
+      .from("settings")
+      .upsert({ key: "scores_visible", value: String(next) }, { onConflict: "key" });
+    if (error) {
+      setScoresVisible(!next);
+      showToast("Erreur : " + error.message);
+    } else {
+      showToast(next ? "Page Scores visible pour tous ✅" : "Page Scores masquée 🙈");
+    }
+  }
 
   function handleCategoryChange(cat: ScoreEvent["category"]) {
     setSelCat(cat);
@@ -212,6 +240,31 @@ export default function AdminScoresPage() {
           {toast}
         </div>
       )}
+
+      {/* ══════════════════════════════════════════════════════
+          VISIBILITY TOGGLE
+      ══════════════════════════════════════════════════════ */}
+      <section>
+        <div className="rounded-3xl p-5 shadow-sm flex items-center justify-between gap-4" style={{ background: "white" }}>
+          <div>
+            <p className="font-bold text-base" style={{ color: "#2D2D2D" }}>Page Scores 🏆</p>
+            <p className="text-xs mt-0.5" style={{ color: "#2D2D2D55" }}>
+              Visible ou masquée pour les participants
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleToggleScores}
+            className="shrink-0 rounded-full px-4 py-2 text-sm font-bold transition-all active:scale-95"
+            style={{
+              background: scoresVisible ? "#B8E4D8" : "#F4A7B922",
+              color: "#2D2D2D",
+            }}
+          >
+            {scoresVisible ? "Visible ✅" : "Masquée 🙈"}
+          </button>
+        </div>
+      </section>
 
       {/* ══════════════════════════════════════════════════════
           SECTION 1 — ADD POINTS
